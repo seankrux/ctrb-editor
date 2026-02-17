@@ -1,0 +1,15 @@
+{
+  "name": "1.-ctrb-json-editor",
+  "version": "1.0.0",
+  "description": "A complete toolkit for creating, editing, and managing CTRBooster backup files with support for all 5 campaign types.",
+  "main": "ctrb_v4_tests.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
+  }
+}

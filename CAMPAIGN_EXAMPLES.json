@@ -1,0 +1,369 @@
+{
+  "examples": [
+    {
+      "type": "GSearch",
+      "description": "Google Search organic traffic - simulates users searching and clicking through results",
+      "key_differences": {
+        "Type": "GSearch",
+        "TimeinGooglePagesMin": "15",
+        "TimeinGooglePagesMax": "45",
+        "TargetSearchEngine": "Google",
+        "MaxPages": "3",
+        "TimeOfReferrelMin": "0",
+        "TimeOfReferrelMax": "0"
+      },
+      "typical_keywords": [
+        "brand name",
+        "business name + city",
+        "service + location"
+      ],
+      "sample_campaign": {
+        "ProjectName": "5 STARS NYC | BRAND",
+        "Type": "GSearch",
+        "numberOfVisits": "1000",
+        "DailyLimit": "3",
+        "TimeinGooglePagesMin": "15",
+        "TimeinGooglePagesMax": "45",
+        "TargetSearchEngine": "Google",
+        "MaxPages": "3",
+        "Keywords": ["5 stars nyc", "5 star movers"],
+        "lstSites": ["https://maps.google.com/..."]
+      }
+    },
+    {
+      "type": "GMap",
+      "description": "Google Maps engagement - simulates users finding and interacting with business on Maps",
+      "key_differences": {
+        "Type": "GMap",
+        "TimeinGooglePagesMin": "10",
+        "TimeinGooglePagesMax": "30",
+        "TimeOfReferrelMin": "30",
+        "TimeOfReferrelMax": "90",
+        "UseGMBInteraction": false
+      },
+      "typical_keywords": [
+        "tel:+1234567890",
+        "directions URLs",
+        "website URLs"
+      ],
+      "sample_campaign": {
+        "ProjectName": "SCARS | MOVING HELP",
+        "Type": "GMap",
+        "numberOfVisits": "1000",
+        "DailyLimit": "3",
+        "TimeinGooglePagesMin": "10",
+        "TimeinGooglePagesMax": "30",
+        "TimeOfReferrelMin": "30",
+        "TimeOfReferrelMax": "90",
+        "lstSites": [
+          "https://maps.app.goo.gl/...",
+          "https://www.google.com/maps?cid=..."
+        ],
+        "Keywords": ["tel:+12125551234"]
+      }
+    },
+    {
+      "type": "RefDVisit",
+      "description": "Referral Direct Visit - complex multi-step journey from referral source to website",
+      "key_differences": {
+        "Type": "RefDVisit",
+        "TimeOfReferrelMin": "30",
+        "TimeOfReferrelMax": "90",
+        "TimeinGooglePagesMin": "0",
+        "TimeinGooglePagesMax": "0",
+        "InternalVisitsCount": "1"
+      },
+      "typical_keywords": [
+        "tel:+1234567890",
+        "https://website.com",
+        "https://facebook.com/...",
+        "https://instagram.com/..."
+      ],
+      "sample_campaign": {
+        "ProjectName": "Real Roofing | Social",
+        "Type": "RefDVisit",
+        "numberOfVisits": "1000",
+        "DailyLimit": "3",
+        "TimeOfReferrelMin": "60",
+        "TimeOfReferrelMax": "120",
+        "TimeOfVisitMin": "180",
+        "TimeOfVisitMax": "250",
+        "InternalVisitsCount": "1",
+        "TimeOfInternalMin": "90",
+        "TimeOfInternalMax": "120",
+        "lstSites": ["https://www.google.com/viewer/place?mid=/g/..."],
+        "Keywords": [
+          "https://www.facebook.com/realroofingcontractormiamiinc/",
+          "https://www.instagram.com/realroofingcontractormiamiinc/"
+        ]
+      }
+    },
+    {
+      "type": "GSearchRef",
+      "description": "Combined Google Search + Referral - most complex, simulates search → maps → website journey",
+      "key_differences": {
+        "Type": "GSearchRef",
+        "TimeinGooglePagesMin": "20",
+        "TimeinGooglePagesMax": "60",
+        "TargetSearchEngine": "Google",
+        "TimeOfReferrelMin": "30",
+        "TimeOfReferrelMax": "90",
+        "MaxPages": "2"
+      },
+      "typical_keywords": [
+        "brand + location search terms",
+        "service + city combinations"
+      ],
+      "sample_campaign": {
+        "ProjectName": "MIAMI ROOFING | SEARCH+REF",
+        "Type": "GSearchRef",
+        "numberOfVisits": "100",
+        "DailyLimit": "2",
+        "TimeinGooglePagesMin": "20",
+        "TimeinGooglePagesMax": "60",
+        "TargetSearchEngine": "Google",
+        "TimeOfReferrelMin": "30",
+        "TimeOfReferrelMax": "90",
+        "MaxPages": "2",
+        "Keywords": ["miami roofing contractor", "roofing company miami"],
+        "lstSites": ["https://maps.google.com/..."]
+      }
+    },
+    {
+      "type": "DirectVisit",
+      "description": "Direct website traffic - simulates users going directly to website (no search/maps referrer)",
+      "key_differences": {
+        "Type": "DirectVisit",
+        "TimeOfReferrelMin": "0",
+        "TimeOfReferrelMax": "0",
+        "TimeinGooglePagesMin": "0",
+        "TimeinGooglePagesMax": "0",
+        "UseGeolocation": false,
+        "TargetUrl": "https://website.com"
+      },
+      "typical_keywords": [
+        "https://website.com"
+      ],
+      "sample_campaign": {
+        "ProjectName": "Direct Website Traffic",
+        "Type": "DirectVisit",
+        "numberOfVisits": "100",
+        "DailyLimit": "2",
+        "TimeOfReferrelMin": "0",
+        "TimeOfReferrelMax": "0",
+        "TimeinGooglePagesMin": "0",
+        "TimeinGooglePagesMax": "0",
+        "UseGeolocation": false,
+        "TargetUrl": "https://example.com",
+        "Keywords": ["https://example.com"]
+      }
+    }
+  ],
+  "field_comparison": {
+    "TimeinGooglePagesMin_Max": {
+      "GSearch": "15-45 seconds (browsing search results)",
+      "GMap": "10-30 seconds (looking at Maps)",
+      "RefDVisit": "0 seconds (no Google pages)",
+      "GSearchRef": "20-60 seconds (extended search browsing)",
+      "DirectVisit": "0 seconds (no Google pages)"
+    },
+    "TimeOfReferrelMin_Max": {
+      "GSearch": "0 seconds (direct from search)",
+      "GMap": "30-90 seconds (Maps to website)",
+      "RefDVisit": "30-90 seconds (referral source to site)",
+      "GSearchRef": "30-90 seconds (search to referral to site)",
+      "DirectVisit": "0 seconds (no referral)"
+    },
+    "MaxPages": {
+      "GSearch": "3 (browse multiple search pages)",
+      "GMap": "0 (single Maps view)",
+      "RefDVisit": "0 (direct to referral)",
+      "GSearchRef": "2 (some search browsing)",
+      "DirectVisit": "0 (direct to site)"
+    },
+    "TargetSearchEngine": {
+      "GSearch": "Google",
+      "GMap": "",
+      "RefDVisit": "",
+      "GSearchRef": "Google",
+      "DirectVisit": ""
+    },
+    "UseGeolocation": {
+      "GSearch": true,
+      "GMap": true,
+      "RefDVisit": true,
+      "GSearchRef": true,
+      "DirectVisit": false
+    }
+  },
+  "template_configurations": {
+    "Template_A_Conservative": {
+      "description": "Conservative settings for testing or low-volume campaigns",
+      "strMiles": "3",
+      "numberOfVisits": "100",
+      "DailyLimit": "2",
+      "doneDailyVisits_target": "1",
+      "TimeOfReferrelMin": "60",
+      "TimeOfReferrelMax": "120",
+      "MinDelayAfterVisit": "1800",
+      "MaxDelayAfterVisit": "2400",
+      "lstCustomGeolocations_count": 50,
+      "lstSites_count": 5,
+      "use_case": "Testing, low-profile campaigns, conservative approach"
+    },
+    "Template_B_Standard": {
+      "description": "Standard high-volume settings",
+      "strMiles": "1",
+      "numberOfVisits": "1000",
+      "DailyLimit": "3",
+      "doneDailyVisits_target": "1",
+      "TimeOfReferrelMin": "30",
+      "TimeOfReferrelMax": "90",
+      "MinDelayAfterVisit": "1300",
+      "MaxDelayAfterVisit": "2000",
+      "lstCustomGeolocations_count": 75,
+      "lstSites_count": 1,
+      "use_case": "Standard production campaigns, focused targeting"
+    },
+    "Template_C_Aggressive": {
+      "description": "Aggressive high-volume settings with higher daily targets",
+      "strMiles": "1",
+      "numberOfVisits": "1000",
+      "DailyLimit": "3",
+      "doneDailyVisits_target": "2",
+      "TimeOfReferrelMin": "30",
+      "TimeOfReferrelMax": "90",
+      "MinDelayAfterVisit": "1300",
+      "MaxDelayAfterVisit": "2000",
+      "lstCustomGeolocations_count": 75,
+      "lstSites_count": 1,
+      "use_case": "Aggressive campaigns, maximum daily activity"
+    }
+  },
+  "real_world_examples": {
+    "local_hvac_business": {
+      "scenario": "HVAC company in Van Nuys, CA wants Maps engagement",
+      "recommended_type": "GMap",
+      "settings": {
+        "ProjectName": "Orion HVAC | Van Nuys",
+        "Type": "GMap",
+        "strMiles": "1",
+        "numberOfVisits": "1000",
+        "DailyLimit": "3",
+        "center_coordinates": {
+          "lat": 34.2120,
+          "lon": -118.4828
+        },
+        "lstSites": ["https://www.google.com/viewer/place?mid=/g/11twv43hk6"],
+        "Keywords": ["https://myorionhvac.com/services/hvac-company-van-nuys-ca/?utm_campaign=gmb"]
+      }
+    },
+    "moving_company_brand_search": {
+      "scenario": "Moving company wants to boost brand search visibility",
+      "recommended_type": "GSearch",
+      "settings": {
+        "ProjectName": "Mint Movers Brooklyn | BRAND",
+        "Type": "GSearch",
+        "strMiles": "3",
+        "numberOfVisits": "1000",
+        "DailyLimit": "3",
+        "center_coordinates": {
+          "lat": 40.6782,
+          "lon": -73.9442
+        },
+        "Keywords": ["mint movers brooklyn", "brooklyn movers mint"],
+        "TargetSearchEngine": "Google",
+        "MaxPages": "3"
+      }
+    },
+    "roofing_company_social_media": {
+      "scenario": "Roofing company wants traffic from Maps to social media",
+      "recommended_type": "RefDVisit",
+      "settings": {
+        "ProjectName": "Real Roofing | Social Traffic",
+        "Type": "RefDVisit",
+        "strMiles": "1",
+        "numberOfVisits": "1000",
+        "DailyLimit": "3",
+        "center_coordinates": {
+          "lat": 25.7617,
+          "lon": -80.1918
+        },
+        "lstSites": ["https://www.google.com/viewer/place?mid=/g/11rvcv1bht"],
+        "Keywords": [
+          "https://www.facebook.com/realroofingcontractormiamiinc/",
+          "https://www.instagram.com/realroofingcontractormiamiinc/"
+        ]
+      }
+    },
+    "plumbing_company_phone_calls": {
+      "scenario": "Plumbing company wants phone call clicks from Maps",
+      "recommended_type": "GMap",
+      "settings": {
+        "ProjectName": "Peerless Plumbing | Phone Clicks",
+        "Type": "GMap",
+        "strMiles": "1",
+        "numberOfVisits": "1000",
+        "DailyLimit": "3",
+        "center_coordinates": {
+          "lat": 32.9326,
+          "lon": -96.7632
+        },
+        "Keywords": ["tel:+12145551234"]
+      }
+    },
+    "multi_location_franchise": {
+      "scenario": "Franchise with multiple locations needs varied campaigns",
+      "recommended_strategy": "Mix of GSearch (40%), GMap (40%), RefDVisit (20%)",
+      "approach": [
+        "GSearch campaigns for each location's brand searches",
+        "GMap campaigns for local Maps engagement",
+        "RefDVisit campaigns for website traffic and conversions"
+      ]
+    }
+  },
+  "tips": {
+    "geolocation_density": {
+      "50_points": "Use with 3-mile radius for wider area coverage",
+      "75_points": "Use with 1-mile radius for focused local targeting",
+      "100_points": "Maximum density for very tight targeting (custom)"
+    },
+    "daily_limits": {
+      "1_2_visits": "Conservative, testing, or low-profile",
+      "3_visits": "Standard production setting",
+      "5_plus_visits": "Aggressive (may trigger detection)"
+    },
+    "timing_ranges": {
+      "visit_duration": "180-250 seconds = 3-4 minutes (engaged visitor)",
+      "referral_duration": "30-90 seconds = realistic transition time",
+      "delay_between": "1300-2400 seconds = 21-40 minutes (natural spacing)"
+    },
+    "url_formats": {
+      "maps_short_link": "https://maps.app.goo.gl/...",
+      "maps_cid": "https://www.google.com/maps?cid=12345678901234567890",
+      "maps_place_id": "https://www.google.com/maps/place/?q=place_id:ChIJ...",
+      "maps_viewer": "https://www.google.com/viewer/place?mid=/g/...",
+      "maps_ftid": "https://maps.google.com/maps?ftid=0x...:0x..."
+    }
+  },
+  "validation_checklist": {
+    "before_import": [
+      "✓ All 72 fields present in each campaign",
+      "✓ GMapRetriesFails is integer (not string)",
+      "✓ Progress strings format: '0 of 1000'",
+      "✓ Geolocations format: 'lat:lon' with 6 decimals",
+      "✓ Filename format: 'num1-num2'",
+      "✓ Dates in correct ISO 8601 format",
+      "✓ Type field matches one of 5 valid types",
+      "✓ JSON is valid (no syntax errors)"
+    ],
+    "after_creation": [
+      "✓ Project names are descriptive",
+      "✓ Coordinates are within valid ranges",
+      "✓ Visit quotas are realistic",
+      "✓ Schedule times are within 12-hour format",
+      "✓ Keywords/URLs are properly formatted",
+      "✓ Campaign IDs are unique"
+    ]
+  }
+}

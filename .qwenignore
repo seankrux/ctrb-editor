@@ -1,0 +1,46 @@
+# Files and folders Qwen should ignore
+
+# System files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Build outputs
+dist/
+build/
+*.pyc
+__pycache__/
+node_modules/
+
+# Logs and temp files
+*.log
+tmp/
+temp/
+.tmp/
+
+# IDE settings (keep project-level ones)
+.idea/
+.vscode/settings.json
+
+# Backup files (like the CTRB backups folder)
+*backup*/
+*.bak
+*.backup
+
+# Large data files
+*.jsonl
+*.parquet
+data/*.json
+
+# Screenshots and images
+*.jpg
+*.png
+*.gif
+*.svg
+
+# Local environment
+.env
+.env.local
+*.local

@@ -1,0 +1,61 @@
+# System files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Build outputs
+dist/
+build/
+*.pyc
+__pycache__/
+
+# Dependencies
+node_modules/
+
+# Logs and temp files
+*.log
+tmp/
+temp/
+.tmp/
+
+# IDE settings
+.idea/
+.vscode/settings.json
+
+# Backup files (keep the folder but not contents)
+*backup*/
+*.bak
+*.backup
+
+# Large data files
+*.jsonl
+*.parquet
+data/*.json
+
+# Screenshots and images
+*.jpg
+*.png
+*.gif
+*.svg
+*.heic
+
+# Local environment
+.env
+.env.local
+*.local
+
+# Test artifacts
+test-results/
+playwright-report/
+test_export*.json
+
+# Qwen specific (keep config, not runtime)
+.qwen/debug/
+.qwen/tmp/
+.qwen/todos/
+.qwen/projects/
+
+# Archive (optional - uncomment to exclude)
+# archive/

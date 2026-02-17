@@ -1,0 +1,97 @@
+{
+  "_comment": "User preferences for vibe coder setup - auto-updated by skills",
+  "_version": "1.0.0",
+  "_last_updated": "2026-02-17T21:00:00Z",
+  
+  "stack": {
+    "frontend": "nextjs",
+    "language": "typescript",
+    "styling": "tailwind",
+    "package_manager": "bun",
+    "component_library": "shadcn"
+  },
+  
+  "github": {
+    "org": "",
+    "default_visibility": "private",
+    "default_branch": "main",
+    "auto_ci_cd": true,
+    "auth_method": "cli"
+  },
+  
+  "deploy": {
+    "preferred": "vercel",
+    "auto_deploy": true,
+    "preview_on_pr": true
+  },
+  
+  "database": {
+    "preferred": "supabase",
+    "local": "sqlite",
+    "orm": "prisma"
+  },
+  
+  "auth": {
+    "preferred": "nextauth",
+    "providers": ["github", "google"]
+  },
+  
+  "workflow": {
+    "discovery_level": "quick",
+    "auto_test": true,
+    "auto_lint": true,
+    "auto_format": true
+  },
+  
+  "vibe_mode": {
+    "default": false,
+    "boot_summary": true,
+    "change_logging": true,
+    "session_summary": true
+  },
+  
+  "learnings": [
+    {
+      "date": "2026-02-17",
+      "type": "preference",
+      "key": "double_quotes",
+      "value": true,
+      "applied_to": ["quick-gen", "formatter"]
+    }
+  ],
+  
+  "projects": [
+    {
+      "name": "modern-app-v1",
+      "date": "2026-02-17",
+      "stack": {
+        "frontend": "nextjs",
+        "backend": "nextjs-api",
+        "database": "supabase"
+      },
+      "github": "sean-ctrb/modern-app-v1",
+      "status": "created"
+    }
+  ],
+  
+  "skills": {
+    "enabled": [
+      "vibe-mode",
+      "context-sense", 
+      "flow-guardian",
+      "vibe-validator",
+      "quick-gen",
+      "refactor-buddy",
+      "auto-test",
+      "orchestrator",
+      "arsenal-manager",
+      "tool-manager",
+      "boot-summary",
+      "project-discovery",
+      "stack-advisor",
+      "github-wizard"
+    ],
+    "disabled": [],
+    "effectiveness": {}
+  }
+}

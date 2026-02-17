@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTRBooster Campaign Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .tab:hover {
+            background: #e8e8e8;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        label .hint {
+            font-weight: normal;
+            color: #999;
+            font-size: 12px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: monospace;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .campaign-list {
+            max-height: 500px;
+            overflow-y: auto;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+        }
+
+        .campaign-item {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .campaign-item:hover {
+            background: #f8f9fa;
+        }
+
+        .campaign-info {
+            flex: 1;
+        }
+
+        .campaign-type {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .type-GSearch {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .type-GMap {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .type-RefDVisit {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .type-GSearchRef {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .type-DirectVisit {
+            background: #fce4ec;
+            color: #c2185b;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .json-preview {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow: auto;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .section h3 {
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 CTRBooster Campaign Editor</h1>
+            <p>Create, edit, and manage CTRBooster backup files with ease</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('create')">➕ Create Campaign</button>
+            <button class="tab" onclick="switchTab('manage')">📋 Manage Campaigns</button>
+            <button class="tab" onclick="switchTab('import')">📥 Import/Export</button>
+            <button class="tab" onclick="switchTab('stats')">📊 Statistics</button>
+        </div>
+
+        <!-- CREATE TAB -->
+        <div id="tab-create" class="tab-content active">
+            <h2 style="margin-bottom: 20px;">Create New Campaign</h2>
+
+            <div class="section">
+                <h3>Campaign Type</h3>
+                <select id="campaignType" onchange="updateFormForType()">
+                    <option value="GSearch">GSearch - Google Search Traffic</option>
+                    <option value="GMap">GMap - Google Maps Engagement</option>
+                    <option value="RefDVisit">RefDVisit - Referral Direct Visit</option>
+                    <option value="GSearchRef">GSearchRef - Search + Referral</option>
+                    <option value="DirectVisit">DirectVisit - Direct Website Traffic</option>
+                </select>
+            </div>
+
+            <div class="section">
+                <h3>Basic Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Project Name</label>
+                        <input type="text" id="projectName" placeholder="My Campaign Name">
+                    </div>
+                    <div class="form-group">
+                        <label>Total Visits</label>
+                        <input type="number" id="totalVisits" value="1000">
+                    </div>
+                    <div class="form-group">
+                        <label>Daily Limit</label>
+                        <input type="number" id="dailyLimit" value="3">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Geolocation Settings</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Latitude <span class="hint">(e.g., 40.7128)</span></label>
+                        <input type="number" step="any" id="latitude" placeholder="40.7128">
+                    </div>
+                    <div class="form-group">
+                        <label>Longitude <span class="hint">(e.g., -74.0060)</span></label>
+                        <input type="number" step="any" id="longitude" placeholder="-74.0060">
+                    </div>
+                    <div class="form-group">
+                        <label>Radius (miles)</label>
+                        <input type="number" step="0.1" id="radius" value="1.0">
+                    </div>
+                    <div class="form-group">
+                        <label>Geo Points Count</label>
+                        <input type="number" id="geoCount" value="75">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Targets & Keywords</h3>
+                <div class="form-group">
+                    <label>Target URL <span class="hint">(main destination URL - website or Maps URL)</span></label>
+                    <input type="text" id="targetUrl" placeholder="https://example.com or https://maps.google.com/...">
+                </div>
+                <div class="form-group">
+                    <label>Target Sites <span class="hint">(one per line - Google Maps URLs)</span></label>
+                    <textarea id="targetSites" placeholder="https://maps.google.com/...&#10;https://maps.app.goo.gl/..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Keywords/Actions <span class="hint">(one per line, e.g., tel:+1234567890)</span></label>
+                    <textarea id="keywords" placeholder="tel:+1234567890&#10;https://example.com"></textarea>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Timing Configuration (seconds)</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Visit Duration Min</label>
+                        <input type="number" id="visitMin" value="180">
+                    </div>
+                    <div class="form-group">
+                        <label>Visit Duration Max</label>
+                        <input type="number" id="visitMax" value="250">
+                    </div>
+                    <div class="form-group">
+                        <label>Delay After Visit Min</label>
+                        <input type="number" id="delayMin" value="1300">
+                    </div>
+                    <div class="form-group">
+                        <label>Delay After Visit Max</label>
+                        <input type="number" id="delayMax" value="2000">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Schedule</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Start Time</label>
+                        <input type="text" id="startTime" value="10:00 AM">
+                    </div>
+                    <div class="form-group">
+                        <label>End Time</label>
+                        <input type="text" id="endTime" value="09:00 PM">
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="createCampaign()">✅ Create Campaign</button>
+            <button class="btn btn-secondary" onclick="clearForm()">🔄 Clear Form</button>
+        </div>
+
+        <!-- MANAGE TAB -->
+        <div id="tab-manage" class="tab-content">
+            <h2 style="margin-bottom: 20px;">Manage Campaigns</h2>
+            <div id="campaignList" class="campaign-list">
+                <div style="padding: 40px; text-align: center; color: #999;">
+                    No campaigns loaded. Create a campaign or import a backup file.
+                </div>
+            </div>
+        </div>
+
+        <!-- IMPORT/EXPORT TAB -->
+        <div id="tab-import" class="tab-content">
+            <h2 style="margin-bottom: 20px;">Import & Export</h2>
+
+            <div class="section">
+                <h3>📥 Import Backup File</h3>
+                <div class="file-input-wrapper">
+                    <button class="btn btn-primary">Choose JSON File</button>
+                    <input type="file" id="importFile" accept=".json" onchange="importBackup()">
+                </div>
+                <p style="margin-top: 10px; color: #666; font-size: 14px;">
+                    Select a CTRBooster backup JSON file to load campaigns
+                </p>
+            </div>
+
+            <div class="section">
+                <h3>📤 Export Backup File</h3>
+                <button class="btn btn-success" onclick="exportBackup()">💾 Download Backup JSON</button>
+                <p style="margin-top: 10px; color: #666; font-size: 14px;">
+                    Export all campaigns as a CTRBooster-compatible backup file
+                </p>
+            </div>
+
+            <div class="section">
+                <h3>👁️ Preview JSON</h3>
+                <div id="jsonPreview" class="json-preview">
+                    // No campaigns to preview
+                </div>
+            </div>
+        </div>
+
+        <!-- STATS TAB -->
+        <div id="tab-stats" class="tab-content">
+            <h2 style="margin-bottom: 20px;">Campaign Statistics</h2>
+            <div id="statsContent">
+                <div style="padding: 40px; text-align: center; color: #999;">
+                    No campaigns loaded
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let campaigns = [];
+
+        // Campaign type configurations
+        const CAMPAIGN_TYPE_CONFIGS = {
+            GSearch: { TimeinGooglePagesMin: "15", TimeinGooglePagesMax: "45" },
+            GMap: { TimeinGooglePagesMin: "10", TimeinGooglePagesMax: "30" },
+            RefDVisit: { TimeinGooglePagesMin: "0", TimeinGooglePagesMax: "0" },
+            GSearchRef: { TimeinGooglePagesMin: "20", TimeinGooglePagesMax: "60" },
+            DirectVisit: { TimeinGooglePagesMin: "0", TimeinGooglePagesMax: "0" }
+        };
+
+        // Switch tabs
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+
+            if (tabName === 'stats') {
+                updateStats();
+            } else if (tabName === 'manage') {
+                renderCampaignList();
+            } else if (tabName === 'import') {
+                updateJsonPreview();
+            }
+        }
+
+        // Generate random ID
+        function generateId() {
+            return String(Math.floor(Math.random() * (9999999999 - 3000000000) + 3000000000));
+        }
+
+        // Generate filename
+        function generateFilename() {
+            const num1 = Math.floor(Math.random() * 900000000 + 100000000);
+            const num2 = Math.floor(Math.random() * 900000000 + 100000000);
+            return `${num1}-${num2}`;
+        }
+
+        // Generate datetime
+        function generateDateTime() {
+            const now = new Date();
+            return now.toLocaleString('en-US', {
+                month: 'numeric',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+        }
+
+        // Generate ISO datetime
+        function generateISODateTime(offsetHours = 0) {
+            const now = new Date();
+            now.setHours(now.getHours() + offsetHours);
+            return now.toISOString().replace('Z', '-08:00');
+        }
+
+        // Generate geolocations
+        function generateGeolocations(lat, lon, radius, count) {
+            const latRange = radius / 69.0;
+            const lonRange = radius / (69.0 * Math.cos(lat * Math.PI / 180));
+            const geos = [];
+
+            for (let i = 0; i < count; i++) {
+                const randomLat = lat + (Math.random() * 2 - 1) * latRange;
+                const randomLon = lon + (Math.random() * 2 - 1) * lonRange;
+                geos.push(`${randomLat.toFixed(6)}:${randomLon.toFixed(6)}`);
+            }
+
+            return geos;
+        }
+
+        // Create campaign
+        function createCampaign() {
+            const type = document.getElementById('campaignType').value;
+            const projectName = document.getElementById('projectName').value;
+            const totalVisits = document.getElementById('totalVisits').value;
+            const dailyLimit = document.getElementById('dailyLimit').value;
+            const lat = parseFloat(document.getElementById('latitude').value);
+            const lon = parseFloat(document.getElementById('longitude').value);
+            const radius = parseFloat(document.getElementById('radius').value);
+            const geoCount = parseInt(document.getElementById('geoCount').value);
+            const sites = document.getElementById('targetSites').value.split('\n').filter(s => s.trim());
+            const keywords = document.getElementById('keywords').value.split('\n').filter(k => k.trim());
+            let targetUrl = document.getElementById('targetUrl').value.trim();
+
+            if (!projectName || isNaN(lat) || isNaN(lon)) {
+                alert('Please fill in required fields (Project Name, Latitude, Longitude)');
+                return;
+            }
+
+            // Auto-set TargetUrl if not provided
+            if (!targetUrl) {
+                if (type === 'DirectVisit' && keywords.length > 0) {
+                    // For DirectVisit, use first keyword (should be website URL)
+                    targetUrl = keywords[0];
+                } else if (sites.length > 0) {
+                    // For other types, use first site
+                    targetUrl = sites[0];
+                } else if (keywords.length > 0) {
+                    // Fallback to first keyword
+                    const urlKeywords = keywords.filter(k => k.startsWith('http'));
+                    if (urlKeywords.length > 0) {
+                        targetUrl = urlKeywords[0];
+                    }
+                }
+            }
+
+            const typeConfig = CAMPAIGN_TYPE_CONFIGS[type];
+
+            const campaign = {
+                strGoogleSearchType: "Default",
+                strMiles: String(radius),
+                UseXMiles: true,
+                UseGeolocation: type !== 'DirectVisit',
+                strNextDevice: "Desktop",
+                AuthorId: "",
+                MatchExactUrl: false,
+                id: generateId(),
+                Checked: true,
+                UseCustomProxy: false,
+                UseGMBInteraction: false,
+                UseKnowdGraphInteraction: false,
+                UsePhoneNumberClick: false,
+                ProjectName: projectName,
+                Type: type,
+                numberOfVisits: totalVisits,
+                doneVisits: `0 of ${totalVisits}`,
+                doneDailyVisits: "0 of 1",
+                TimeOfVisitMin: document.getElementById('visitMin').value,
+                TimeOfVisitMax: document.getElementById('visitMax').value,
+                InternalVisitsCount: "1",
+                TimeOfInternalMin: "90",
+                TimeOfInternalMax: "120",
+                TimeOfReferrelMin: "30",
+                TimeOfReferrelMax: "90",
+                Threads: "",
+                TimeinGooglePagesMin: typeConfig.TimeinGooglePagesMin,
+                TimeinGooglePagesMax: typeConfig.TimeinGooglePagesMax,
+                MaxPages: type === 'GSearch' || type === 'GSearchRef' ? "3" : "0",
+                TargetSearchEngine: type === 'GSearch' || type === 'GSearchRef' ? "Google" : "",
+                TargetUrl: targetUrl,
+                TargetName: projectName,
+                CreateTime: generateDateTime(),
+                lstUsedProxies: [],
+                lstCustomProxies: [],
+                lstCustomGeolocations: generateGeolocations(lat, lon, radius, geoCount),
+                lstKeywords: [],
+                lstSites: sites,
+                lstInternalIgnoreLinks: [],
+                GMapRetries: "",
+                GMapRetriesFails: 0,
+                DailyLimit: dailyLimit,
+                DailyLimitMin: "1",
+                DailyLimitMax: "0",
+                dtTodayDate: generateISODateTime(0).split('T')[0] + 'T00:00:00-08:00',
+                MinDelayAfterVisit: document.getElementById('delayMin').value,
+                MaxDelayAfterVisit: document.getElementById('delayMax').value,
+                DeviceType: "Desktop",
+                VisitCompetitor: false,
+                strStartTime: document.getElementById('startTime').value,
+                strEndTime: document.getElementById('endTime').value,
+                strMobileUseragentPecentage: "0",
+                strMobileVisits: "",
+                strDesktopVisits: "",
+                Keywords: keywords,
+                UsedKeywords: [],
+                Filename: generateFilename(),
+                nextRun: generateISODateTime(1),
+                UseCustomLanguage: false,
+                CustomLanguage: ""
+            };
+
+            campaigns.push(campaign);
+            alert(`✅ Campaign "${projectName}" created successfully!\nID: ${campaign.id}`);
+            clearForm();
+        }
+
+        // Clear form
+        function clearForm() {
+            document.getElementById('projectName').value = '';
+            document.getElementById('latitude').value = '';
+            document.getElementById('longitude').value = '';
+            document.getElementById('targetUrl').value = '';
+            document.getElementById('targetSites').value = '';
+            document.getElementById('keywords').value = '';
+        }
+
+        // Update form for type
+        function updateFormForType() {
+            // Could add type-specific form changes here
+        }
+
+        // Render campaign list
+        function renderCampaignList() {
+            const listEl = document.getElementById('campaignList');
+
+            if (campaigns.length === 0) {
+                listEl.innerHTML = '<div style="padding: 40px; text-align: center; color: #999;">No campaigns loaded</div>';
+                return;
+            }
+
+            let html = '';
+            campaigns.forEach((campaign, index) => {
+                html += `
+                    <div class="campaign-item">
+                        <div class="campaign-info">
+                            <span class="campaign-type type-${campaign.Type}">${campaign.Type}</span>
+                            <strong>${campaign.ProjectName}</strong>
+                            <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                                ID: ${campaign.id} | Visits: ${campaign.numberOfVisits} | Daily: ${campaign.DailyLimit}
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn btn-danger" onclick="deleteCampaign(${index})">🗑️ Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            listEl.innerHTML = html;
+        }
+
+        // Delete campaign
+        function deleteCampaign(index) {
+            if (confirm('Are you sure you want to delete this campaign?')) {
+                campaigns.splice(index, 1);
+                renderCampaignList();
+                alert('Campaign deleted');
+            }
+        }
+
+        // Import backup
+        function importBackup() {
+            const file = document.getElementById('importFile').files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!Array.isArray(data)) {
+                        alert('Invalid backup file: must be a JSON array');
+                        return;
+                    }
+                    campaigns = data;
+                    alert(`✅ Imported ${campaigns.length} campaigns`);
+                    renderCampaignList();
+                } catch (err) {
+                    alert('Error parsing JSON file: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Export backup
+        function exportBackup() {
+            if (campaigns.length === 0) {
+                alert('No campaigns to export');
+                return;
+            }
+
+            const json = JSON.stringify(campaigns, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ctrb_backup_${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Update JSON preview
+        function updateJsonPreview() {
+            const preview = document.getElementById('jsonPreview');
+            if (campaigns.length === 0) {
+                preview.textContent = '// No campaigns to preview';
+            } else {
+                preview.textContent = JSON.stringify(campaigns, null, 2);
+            }
+        }
+
+        // Update stats
+        function updateStats() {
+            const statsEl = document.getElementById('statsContent');
+
+            if (campaigns.length === 0) {
+                statsEl.innerHTML = '<div style="padding: 40px; text-align: center; color: #999;">No campaigns loaded</div>';
+                return;
+            }
+
+            const types = {};
+            let totalVisits = 0;
+
+            campaigns.forEach(c => {
+                types[c.Type] = (types[c.Type] || 0) + 1;
+                totalVisits += parseInt(c.numberOfVisits || 0);
+            });
+
+            let html = '<div class="stats-grid">';
+            html += `
+                <div class="stat-card">
+                    <div class="stat-value">${campaigns.length}</div>
+                    <div class="stat-label">Total Campaigns</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${totalVisits.toLocaleString()}</div>
+                    <div class="stat-label">Total Planned Visits</div>
+                </div>
+            `;
+            html += '</div>';
+
+            html += '<div class="section"><h3>Campaign Types</h3>';
+            for (const [type, count] of Object.entries(types)) {
+                const pct = ((count / campaigns.length) * 100).toFixed(1);
+                html += `<div style="margin: 10px 0;"><span class="campaign-type type-${type}">${type}</span> ${count} campaigns (${pct}%)</div>`;
+            }
+            html += '</div>';
+
+            statsEl.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,2126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTRBooster Campaign Editor V4 ✨</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-hover: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --border: #334155;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+        body { background-color: var(--bg-dark); color: var(--text-main); font-size: 14px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* UTIL CLASS */
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-4 { gap: 1rem; }
+        .p-4 { padding: 1rem; }
+        .px-4 { padding-left: 1rem; padding-right: 1rem; }
+        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .text-sm { font-size: 0.875rem; }
+        .text-xs { font-size: 0.75rem; }
+        .font-bold { font-weight: 700; }
+        .text-muted { color: var(--text-muted); }
+        .text-success { color: var(--success); }
+        .text-danger { color: var(--danger); }
+        .w-full { width: 100%; }
+        .h-full { height: 100%; }
+        .hidden { display: none !important; }
+        .mt-1 { margin-top: 0.25rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+
+        /* BUTTONS */
+        .btn { padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-danger { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.3); }
+        .btn-secondary { background: var(--bg-hover); color: var(--text-main); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: #475569; }
+        .btn-success { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid var(--success); }
+        .btn-success:hover { background: rgba(16, 185, 129, 0.3); }
+        .btn-sm { padding: 0.25rem 0.5rem; font-size: 12px; }
+
+        /* INPUTS */
+        input, select, textarea { background: var(--bg-hover); border: 1px solid var(--border); color: var(--text-main); padding: 0.5rem; border-radius: 4px; width: 100%; }
+        input:focus, select:focus, textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
+        input[type="checkbox"] { width: auto; cursor: pointer; width: 16px; height: 16px; }
+        input[type="radio"] { width: auto; cursor: pointer; width: 14px; height: 14px; }
+
+        /* LAYOUT */
+        header { background: var(--bg-card); border-bottom: 1px solid var(--border); padding: 0 1rem; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+        .brand { font-size: 1.25rem; font-weight: bold; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+
+        .tabs { display: flex; gap: 2px; height: 100%; }
+        .tab-btn { background: transparent; border: none; color: var(--text-muted); padding: 0 1.5rem; cursor: pointer; height: 100%; font-weight: 500; border-bottom: 2px solid transparent; }
+        .tab-btn:hover { color: var(--text-main); background: rgba(255,255,255,0.05); }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        main { flex: 1; overflow: hidden; position: relative; }
+        .view-section { height: 100%; overflow-y: auto; padding: 1.5rem; display: none; }
+        .view-section.active { display: block; }
+
+        /* TABLE */
+        .campaign-table-container { background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); overflow: hidden; height: 100%; display: flex; flex-direction: column; }
+        .table-toolbar { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+        .bulk-actions { background: rgba(59, 130, 246, 0.1); border: 1px solid var(--primary); padding: 0.5rem 1rem; border-radius: 6px; display: flex; align-items: center; gap: 1rem; margin-right: auto; }
+
+        .table-scroll { flex: 1; overflow: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+        th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: rgba(0,0,0,0.2); position: sticky; top: 0; font-weight: 600; color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; z-index: 10; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+        .col-checkbox { width: 40px; text-align: center; }
+        .col-actions { width: 160px; text-align: right; }
+
+        /* TAGS */
+        .tag { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .tag-GSearch { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .tag-GMap { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .tag-RefDVisit { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        .tag-DirectVisit { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+        .tag-GSearchRef { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
+
+        /* WIZARD CARD */
+        .wizard-container { max-width: 800px; margin: 0 auto; display: grid; gap: 2rem; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
+        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .form-full { grid-column: span 2; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 12px; font-weight: 600; text-transform: uppercase; }
+
+        .wizard-strategy { background: rgba(15, 23, 42, 0.5); padding: 1rem; border-radius: 6px; margin-top: 1rem; }
+        .checkbox-group { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; cursor: pointer; }
+
+        /* ALERTS */
+        .alert { padding: 1rem; border-radius: 6px; margin-bottom: 1rem; font-size: 13px; line-height: 1.5; }
+        .alert-info { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #93c5fd; }
+        .alert-warning { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #fde68a; }
+
+        /* IMPORT/EXPORT */
+        .code-area { font-family: monospace; font-size: 12px; line-height: 1.5; white-space: pre; }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); }
+        .modal { background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; max-height: 90vh; }
+        .modal-sm { width: 500px; }
+        .modal-lg { width: 820px; }
+        .modal-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); font-weight: bold; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .modal-body { padding: 1.5rem; overflow-y: auto; flex: 1; }
+        .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.5rem; background: rgba(0,0,0,0.2); flex-shrink: 0; }
+
+        /* MODAL TABS */
+        .modal-tab-bar { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin: 0 -1.5rem 1.5rem; padding: 0 1.5rem; flex-shrink: 0; flex-wrap: wrap; }
+        .modal-tab-btn { background: transparent; border: none; color: var(--text-muted); padding: 0.65rem 1rem; cursor: pointer; font-size: 12px; font-weight: 600; border-bottom: 2px solid transparent; white-space: nowrap; }
+        .modal-tab-btn:hover { color: var(--text-main); }
+        .modal-tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .modal-tab-pane { display: none; }
+        .modal-tab-pane.active { display: block; }
+
+        /* EDIT FORM HELPERS */
+        .field-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .field-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
+        .field-grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.75rem; }
+        .field-span-2 { grid-column: span 2; }
+        .field-span-3 { grid-column: span 3; }
+        .field-span-4 { grid-column: span 4; }
+        .field-label { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px; }
+        .field-group { }
+        .section-title { font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; margin: 1.25rem 0 0.75rem; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+        .section-title:first-child { margin-top: 0; }
+        .toggle-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: rgba(0,0,0,0.2); border-radius: 4px; cursor: pointer; user-select: none; }
+        .toggle-row label { cursor: pointer; font-size: 13px; margin: 0; color: var(--text-main); }
+        .toggles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+        .geo-regen { background: rgba(15,23,42,0.6); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; margin-top: 1rem; }
+
+        /* TIME HINT */
+        .time-hint { color: var(--text-muted); font-size: 11px; margin-top: 2px; display: block; }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* V4 NEW: Template Library */
+        .template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+        .template-card { background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; cursor: pointer; transition: all 0.2s; }
+        .template-card:hover { border-color: var(--primary); background: rgba(59,130,246,0.1); }
+        .template-card.selected { border-color: var(--success); background: rgba(16,185,129,0.1); }
+        .template-card h4 { font-size: 13px; margin-bottom: 0.5rem; color: var(--text-main); }
+        .template-card p { font-size: 11px; color: var(--text-muted); margin: 0; }
+
+        /* V4 NEW: Comparison Modal */
+        .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .compare-col { background: rgba(0,0,0,0.2); border-radius: 6px; padding: 1rem; }
+        .compare-col h4 { font-size: 12px; color: var(--primary); margin-bottom: 0.75rem; }
+        .compare-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+        .compare-row:last-child { border-bottom: none; }
+        .compare-row .label { color: var(--text-muted); }
+        .compare-row .val { color: var(--text-main); font-weight: 500; }
+        .compare-row.diff { background: rgba(245,158,11,0.1); }
+        .compare-row.diff .val { color: var(--warning); }
+
+        /* V4 NEW: Validation Warnings */
+        .validation-panel { background: rgba(239,68,68,0.1); border: 1px solid var(--danger); border-radius: 6px; padding: 1rem; margin-top: 1rem; }
+        .validation-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--danger); margin-bottom: 0.5rem; }
+        .validation-item:last-child { margin-bottom: 0; }
+        .validation-item svg { flex-shrink: 0; }
+
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+    <div class="brand">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        CTRBooster V3
+    </div>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="app.switchTab('list')">Campaign List</button>
+        <button class="tab-btn" onclick="app.switchTab('wizard')">⚡ Client Wizard</button>
+        <button class="tab-btn" onclick="app.switchTab('templates')">📋 Templates</button>
+        <button class="tab-btn" onclick="app.switchTab('import')">Import / Export</button>
+    </div>
+    <div class="actions">
+        <button class="btn btn-primary btn-sm" onclick="app.createNew()">+ New Campaign</button>
+        <button class="btn btn-secondary btn-sm" onclick="app.undoDelete()" title="Undo last delete (Ctrl+Z)">↩️ Undo Delete</button>
+    </div>
+</header>
+
+<!-- MAIN CONTENT -->
+<main>
+    <!-- VIEW: LIST -->
+    <div id="view-list" class="view-section active" style="padding: 0;">
+        <div class="campaign-table-container">
+            <!-- TOOLBAR -->
+            <div class="table-toolbar">
+                <div class="flex items-center gap-4">
+                    <input type="text" placeholder="Search by name or ID..." style="width: 260px;" onkeyup="app.filterListDebounced()">
+                    <!-- #3: Type filter dropdown -->
+                    <select id="type-filter" style="width:140px" onchange="app.filterList()">
+                        <option value="">All Types</option>
+                        <option value="GSearch">GSearch</option>
+                        <option value="GMap">GMap</option>
+                        <option value="RefDVisit">RefDVisit</option>
+                        <option value="GSearchRef">GSearchRef</option>
+                        <option value="DirectVisit">DirectVisit</option>
+                    </select>
+                    <div id="bulk-tools" class="bulk-actions hidden">
+                        <span class="text-sm font-bold text-main"><span id="selected-count">0</span> Selected</span>
+                        <div style="height: 20px; width: 1px; background: var(--border);"></div>
+                        <button class="btn btn-secondary btn-sm" onclick="app.bulkEdit()">Bulk Edit</button>
+                        <button class="btn btn-secondary btn-sm" onclick="app.exportSelected()">Export Selected</button>
+                        <button class="btn btn-secondary btn-sm" onclick="app.compareCampaigns()">📊 Compare</button>
+                        <button class="btn btn-danger btn-sm" onclick="app.bulkDelete()">Delete</button>
+                    </div>
+                </div>
+                <div class="text-muted text-sm">
+                    Total: <span id="total-campaigns" class="text-main font-bold">0</span>
+                </div>
+            </div>
+
+            <!-- TABLE -->
+            <div class="table-scroll">
+                <table id="campaign-table">
+                    <thead>
+                        <tr>
+                            <th class="col-checkbox"><input type="checkbox" onchange="app.toggleSelectAll(this)"></th>
+                            <th>Status</th>
+                            <th>Type</th>
+                            <th>Project Name</th>
+                            <th>Total / Daily</th>
+                            <th>Progress</th>
+                            <th>Next Run</th>
+                            <th class="col-actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW: WIZARD -->
+    <div id="view-wizard" class="view-section">
+        <div class="wizard-container">
+            <div class="card">
+                <div class="flex items-center gap-2" style="margin-bottom: 1.5rem; color: var(--primary);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    <h2 class="font-bold text-lg">Client Campaign Generator</h2>
+                </div>
+
+                <div class="alert alert-info">
+                    <strong>Force Multiplier:</strong> Enter client details once, and this tool will generate multiple unique campaigns with customized "Human Jitter" timings to avoid detection.
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-full form-group">
+                        <label>Client / Project Name</label>
+                        <input type="text" id="wiz-name" placeholder="e.g. Acme Plumbing Miami">
+                    </div>
+
+                    <div class="form-full form-group">
+                        <label>Primary Website URL</label>
+                        <input type="text" id="wiz-url" placeholder="https://acmeplumbing.com">
+                    </div>
+
+                    <div class="form-group form-full">
+                        <label>Target Keywords (Comma Separated)</label>
+                        <textarea id="wiz-keywords" rows="3" placeholder="plumber miami, emergency plumbing, water heater repair"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Latitude</label>
+                        <input type="number" step="any" id="wiz-lat" placeholder="25.7617">
+                    </div>
+                    <div class="form-group">
+                        <label>Longitude</label>
+                        <input type="number" step="any" id="wiz-lon" placeholder="-80.1918">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Business Phone (For GMap)</label>
+                        <input type="text" id="wiz-phone" placeholder="+13055550123">
+                    </div>
+                    <div class="form-group">
+                        <label>Map/GMB URL</label>
+                        <input type="text" id="wiz-map" placeholder="https://maps.google.com/...">
+                    </div>
+                </div>
+
+                <!-- STRATEGY -->
+                <div class="wizard-strategy">
+                    <h3 class="text-sm font-bold mb-2">Generation Strategy</h3>
+                    <div class="form-grid">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="gen-gsearch" checked>
+                            <label for="gen-gsearch" style="margin:0">Generate GSearch (Brand)</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="gen-gmap" checked>
+                            <label for="gen-gmap" style="margin:0">Generate GMap (Local)</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="gen-ref" checked>
+                            <label for="gen-ref" style="margin:0">Generate Referral</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="gen-direct">
+                            <label for="gen-direct" style="margin:0">Generate Direct</label>
+                        </div>
+                        <!-- #9: GSearchRef checkbox -->
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="gen-gsearchref">
+                            <label for="gen-gsearchref" style="margin:0">Generate GSearchRef</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <label>Variations per Type</label>
+                        <select id="wiz-variations">
+                            <option value="1">1 Campaign Each (Basic)</option>
+                            <option value="2">2 Variations Each (Better)</option>
+                            <option value="3">3 Variations Each (Best)</option>
+                        </select>
+                        <p class="text-xs text-muted mt-1">Each variation will have unique IDs, slightly shifted centers, and randomized timings.</p>
+                    </div>
+
+                    <!-- #9: Configurable visit count and timing fields -->
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <label>Total Visits per Campaign</label>
+                        <input type="number" id="wiz-visits" value="1000" min="1">
+                    </div>
+                    <div class="form-grid" style="margin-top:0.5rem">
+                        <div class="form-group">
+                            <label>Visit Duration Min (sec)</label>
+                            <input type="number" id="wiz-vmin" value="180">
+                        </div>
+                        <div class="form-group">
+                            <label>Visit Duration Max (sec)</label>
+                            <input type="number" id="wiz-vmax" value="250">
+                        </div>
+                        <div class="form-group">
+                            <label>Daily Limit</label>
+                            <input type="number" id="wiz-daily" value="3">
+                        </div>
+                        <div class="form-group">
+                            <label>Delay Between Visits Min (sec)</label>
+                            <input type="number" id="wiz-delaymin" value="1300">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between" style="margin-top: 2rem;">
+                    <button class="btn btn-secondary" onclick="app.clearWizard()">Reset Form</button>
+                    <button class="btn btn-primary" onclick="app.runWizard()">🚀 Generate Campaigns</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW: IMPORT -->
+    <div id="view-import" class="view-section">
+        <div class="wizard-container">
+            <div class="card">
+                <h2 class="font-bold text-lg mb-4">Import / Export JSON</h2>
+
+                <!-- #7: Merge import mode radio -->
+                <div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.75rem">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                        <input type="radio" name="import-mode" value="replace" checked> Replace All
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                        <input type="radio" name="import-mode" value="merge"> Merge (append)
+                    </label>
+                </div>
+
+                <div class="flex gap-4 mb-4">
+                    <button class="btn btn-secondary w-full" onclick="document.getElementById('file-input').click()">📂 Load File</button>
+                    <input type="file" id="file-input" accept=".json" class="hidden" onchange="app.handleFileUpload(this)">
+                    <button class="btn btn-primary w-full" onclick="app.downloadJSON()">💾 Save JSON</button>
+                </div>
+                <div class="form-group">
+                    <label>JSON Content</label>
+                    <textarea id="json-editor" class="code-area" rows="20" placeholder="Paste JSON here..."></textarea>
+                </div>
+                <button class="btn btn-secondary" onclick="app.loadFromTextarea()">Parse Textarea</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW: TEMPLATES (V4 NEW) -->
+    <div id="view-templates" class="view-section">
+        <div class="wizard-container">
+            <div class="card">
+                <div class="flex justify-between items-center" style="margin-bottom: 1.5rem;">
+                    <h2 class="font-bold text-lg">📋 Template Library</h2>
+                    <button class="btn btn-primary btn-sm" onclick="app.saveAsTemplate()">💾 Save Current as Template</button>
+                </div>
+
+                <div class="alert alert-info">
+                    <strong>Templates</strong> are pre-configured campaign setups. Select one to load its settings, then customize for your client.
+                </div>
+
+                <div class="template-grid" id="template-grid">
+                    <!-- Templates rendered here -->
+                </div>
+
+                <div class="section-title" style="margin-top: 2rem;">Create Template from Campaign</div>
+                <div class="field-group" style="margin-bottom: 0.75rem;">
+                    <label class="field-label">Select a campaign to save as template</label>
+                    <select id="template-source-campaign">
+                        <option value="">-- Select Campaign --</option>
+                    </select>
+                </div>
+                <div class="field-group" style="margin-bottom: 0.75rem;">
+                    <label class="field-label">Template Name</label>
+                    <input type="text" id="template-name" placeholder="e.g. GMap Local Business">
+                </div>
+                <div class="field-group" style="margin-bottom: 0.75rem;">
+                    <label class="field-label">Description</label>
+                    <textarea id="template-desc" rows="2" placeholder="Brief description of this template..."></textarea>
+                </div>
+                <button class="btn btn-secondary" onclick="app.createFromCampaign()">Create Template</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- MODAL CONTAINER -->
+<div id="modal-container" class="modal-overlay hidden" onclick="app.overlayClick(event)">
+</div>
+
+<script>
+const BASE_TEMPLATE = {
+    "strGoogleSearchType": "Default", "strMiles": "1", "UseXMiles": true, "UseGeolocation": true,
+    "strNextDevice": "Desktop", "AuthorId": "", "MatchExactUrl": false, "id": "", "Checked": true,
+    "UseCustomProxy": false, "UseGMBInteraction": false, "UseKnowdGraphInteraction": false,
+    "UsePhoneNumberClick": false, "ProjectName": "", "Type": "RefDVisit", "numberOfVisits": "1000",
+    "doneVisits": "0 of 1000", "doneDailyVisits": "0 of 1", "TimeOfVisitMin": "180",
+    "TimeOfVisitMax": "250", "InternalVisitsCount": "1", "TimeOfInternalMin": "90",
+    "TimeOfInternalMax": "120", "TimeOfReferrelMin": "30", "TimeOfReferrelMax": "90",
+    "Threads": "", "TimeinGooglePagesMin": "0", "TimeinGooglePagesMax": "0", "MaxPages": "0",
+    "TargetSearchEngine": "", "TargetUrl": "", "TargetName": "", "CreateTime": "",
+    "lstUsedProxies": [], "lstCustomProxies": [], "lstCustomGeolocations": [], "lstKeywords": [],
+    "lstSites": [], "lstInternalIgnoreLinks": [], "GMapRetries": "", "GMapRetriesFails": 0,
+    "DailyLimit": "3", "DailyLimitMin": "1", "DailyLimitMax": "0", "dtTodayDate": "",
+    "MinDelayAfterVisit": "1300", "MaxDelayAfterVisit": "2000", "DeviceType": "Desktop",
+    "VisitCompetitor": false, "strStartTime": "10:00 AM", "strEndTime": "09:00 PM",
+    "strMobileUseragentPecentage": "0", "strMobileVisits": "", "strDesktopVisits": "",
+    "Keywords": [], "UsedKeywords": [], "Filename": "", "nextRun": "",
+    "UseCustomLanguage": false, "CustomLanguage": ""
+};
+
+const app = {
+    campaigns: [],
+    selectedIds: new Set(),
+    lastDeleted: null, // V4 FIX #3: For undo delete
+    lastClickedId: null, // V4 FIX: For shift+click range selection
+
+    // V4 NEW: Template Library
+    templates: [
+        {
+            id: "tpl-gmap-local",
+            name: "🗺️ GMap Local Business",
+            desc: "Google Maps campaign for local businesses",
+            config: {
+                Type: "GMap",
+                UseGeolocation: true,
+                UseGMBInteraction: true,
+                UsePhoneNumberClick: true,
+                strMiles: "1",
+                TimeOfVisitMin: "180",
+                TimeOfVisitMax: "250",
+                DailyLimit: "3",
+                numberOfVisits: "1000"
+            }
+        },
+        {
+            id: "tpl-gsearch-brand",
+            name: "🔍 GSearch Brand",
+            desc: "Google Search brand awareness campaign",
+            config: {
+                Type: "GSearch",
+                strGoogleSearchType: "Default",
+                TargetSearchEngine: "Google",
+                MaxPages: "3",
+                TimeinGooglePagesMin: "15",
+                TimeinGooglePagesMax: "45",
+                DailyLimit: "5",
+                numberOfVisits: "1500"
+            }
+        },
+        {
+            id: "tpl-refdvisit",
+            name: "🔗 RefDVisit Social",
+            desc: "Referral traffic from social media",
+            config: {
+                Type: "RefDVisit",
+                TimeOfReferrelMin: "30",
+                TimeOfReferrelMax: "90",
+                DailyLimit: "4",
+                numberOfVisits: "800"
+            }
+        },
+        {
+            id: "tpl-direct",
+            name: "🎯 Direct Visit",
+            desc: "Direct URL visits, no search",
+            config: {
+                Type: "DirectVisit",
+                UseGeolocation: false,
+                DailyLimit: "2",
+                numberOfVisits: "500"
+            }
+        },
+        {
+            id: "tpl-gsearchref",
+            name: "🔬 GSearchRef Combo",
+            desc: "Search + Referral complex journey",
+            config: {
+                Type: "GSearchRef",
+                strGoogleSearchType: "Default",
+                TargetSearchEngine: "Google",
+                MaxPages: "3",
+                TimeinGooglePagesMin: "15",
+                TimeinGooglePagesMax: "45",
+                TimeOfReferrelMin: "30",
+                TimeOfReferrelMax: "90",
+                DailyLimit: "3",
+                numberOfVisits: "1200"
+            }
+        }
+    ],
+    
+    // V4 FIX #1: Persistence keys
+    STORAGE_KEYS: {
+        CAMPAIGNS: 'ctrb_v4_campaigns',
+        TEMPLATES: 'ctrb_v4_templates'
+    },
+
+    init() {
+        // Load from localStorage
+        this.loadFromStorage();
+        // V4 FIX #4: Create debounced version for search input (300ms delay)
+        this.filterListDebounced = this.debounce(() => this.renderList(), 300);
+        this.renderList();
+        this.renderTemplates();
+        window.onbeforeunload = () => this.campaigns.length > 0 ? "You have unsaved changes." : null;
+    },
+    
+    // V4 FIX #1: Load data from localStorage
+    loadFromStorage() {
+        try {
+            // Load campaigns
+            const savedCampaigns = localStorage.getItem(this.STORAGE_KEYS.CAMPAIGNS);
+            if (savedCampaigns) {
+                this.campaigns = JSON.parse(savedCampaigns);
+                console.log(`📦 Loaded ${this.campaigns.length} campaigns from storage`);
+            }
+            
+            // Load custom templates
+            const savedTemplates = localStorage.getItem(this.STORAGE_KEYS.TEMPLATES);
+            if (savedTemplates) {
+                const customTemplates = JSON.parse(savedTemplates);
+                // Append custom templates to defaults
+                this.templates = [...this.templates, ...customTemplates];
+                console.log(`📦 Loaded ${customTemplates.length} custom templates from storage`);
+            }
+        } catch (e) {
+            console.error('❌ Failed to load from storage:', e);
+        }
+    },
+    
+    // V4 FIX #1: Save data to localStorage
+    saveToStorage() {
+        try {
+            localStorage.setItem(this.STORAGE_KEYS.CAMPAIGNS, JSON.stringify(this.campaigns));
+            
+            // Only save custom templates (not defaults)
+            const customTemplates = this.templates.slice(5); // First 5 are defaults
+            localStorage.setItem(this.STORAGE_KEYS.TEMPLATES, JSON.stringify(customTemplates));
+        } catch (e) {
+            console.error('❌ Failed to save to storage:', e);
+        }
+    },
+
+    // --- UTILS ---
+    
+    // V4 FIX #4: Debounce utility function
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    },
+    
+    // V4 FIX #3: Single validation function (replaces duplicate code)
+    validateCampaign(c, includeTimeChecks = false) {
+        const errors = [];
+        
+        // Check 1: Project Name
+        if (!c.ProjectName || c.ProjectName.trim() === '') {
+            errors.push('Missing Project Name');
+        }
+        
+        // Check 2: Type
+        if (!c.Type) {
+            errors.push('Missing Type');
+        }
+        
+        // Check 3: Geolocation consistency
+        if (c.UseGeolocation && (!c.lstCustomGeolocations || c.lstCustomGeolocations.length === 0)) {
+            errors.push('Geolocation enabled but empty');
+        }
+        
+        // Check 4: DailyLimit vs Total (only for edit)
+        if (includeTimeChecks) {
+            const daily = parseInt(c.DailyLimit) || 0;
+            const total = parseInt(c.numberOfVisits) || 0;
+            if (daily > 0 && total > 0 && daily > total) {
+                errors.push(`Daily Limit (${daily}) > Total Visits (${total})`);
+            }
+        }
+        
+        return errors;
+    },
+
+    generateId: () => Math.floor(Math.random() * 90000000) + 10000000 + "",
+
+    generateFilename() {
+        const n1 = Math.floor(Math.random() * 900000000) + 100000000;
+        const n2 = Math.floor(Math.random() * 900000000) + 100000000;
+        return `${n1}-${n2}`;
+    },
+
+    getISODate(offsetHours = 0) {
+        const d = new Date();
+        d.setHours(d.getHours() + offsetHours);
+        return d.toISOString().split('.')[0];
+    },
+
+    // Format matching real CTRBooster CreateTime: "1/28/2026 4:12:37 PM"
+    getCreateTime() {
+        return new Date().toLocaleString('en-US', {
+            month: 'numeric', day: 'numeric', year: 'numeric',
+            hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true
+        });
+    },
+
+    jitter(val, percent = 0.1) {
+        const v = parseInt(val);
+        const diff = v * percent;
+        const offset = (Math.random() * diff * 2) - diff;
+        return Math.floor(v + offset);
+    },
+
+    // Arrays to/from textarea (one item per line)
+    arrayToText(arr) {
+        if (!Array.isArray(arr)) return '';
+        return arr.join('\n');
+    },
+    textToArray(text) {
+        return text.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+    },
+
+    // #2: Human-readable seconds converter
+    secsToHuman(s) {
+        const n = parseInt(s);
+        if (isNaN(n) || n === 0) return '';
+        if (n < 60) return `${n}s`;
+        if (n < 3600) return `≈${Math.round(n / 60)}min`;
+        return `≈${(n / 3600).toFixed(1)}hr`;
+    },
+
+    // V4 NEW: TEMPLATE FUNCTIONS
+    renderTemplates() {
+        const grid = document.getElementById('template-grid');
+        if (!grid) return; // Grid not visible yet (in hidden tab)
+        grid.innerHTML = this.templates.map(t => `
+            <div class="template-card" onclick="app.loadTemplate('${t.id}')">
+                <h4>${this.escHtml(t.name)}</h4>
+                <p>${this.escHtml(t.desc)}</p>
+            </div>
+        `).join('');
+    },
+
+    loadTemplate(tplId) {
+        const tpl = this.templates.find(t => t.id === tplId);
+        if (!tpl) return;
+        
+        // Create new campaign from template
+        const newCamp = JSON.parse(JSON.stringify(BASE_TEMPLATE));
+        Object.assign(newCamp, tpl.config);
+        newCamp.id = this.generateId();
+        newCamp.Filename = this.generateFilename();
+        newCamp.CreateTime = this.getCreateTime();
+        newCamp.dtTodayDate = this.getISODate();
+        newCamp.nextRun = this.getISODate(1);
+        newCamp.ProjectName = `New - ${tpl.name}`;
+        newCamp.doneVisits = `0 of ${newCamp.numberOfVisits}`;
+        newCamp.doneDailyVisits = `0 of ${newCamp.DailyLimit}`;
+        
+        this.campaigns.unshift(newCamp);
+        this.renderList();
+        this.switchTab('list');
+        
+        // Auto-open edit modal
+        setTimeout(() => this.editCampaign(newCamp.id), 100);
+    },
+
+    saveAsTemplate() {
+        const name = prompt("Template Name (e.g., 'GMap Local Business'):");
+        if (!name) return;
+        const desc = prompt("Description (optional):") || "";
+
+        const newTpl = {
+            id: `tpl-${Date.now()}`,
+            name: name,
+            desc: desc,
+            config: {}
+        };
+
+        this.templates.push(newTpl);
+        this.saveToStorage(); // V4 FIX #1: Auto-save templates
+        this.renderTemplates();
+        alert(`✅ Template "${name}" saved! (Persists across reloads)`);
+    },
+
+    updateTemplateCampaignSelect() {
+        const select = document.getElementById('template-source-campaign');
+        if (!select) return;
+        select.innerHTML = '<option value="">-- Select Campaign --</option>' +
+            this.campaigns.map(c => `<option value="${c.id}">${this.escHtml(c.ProjectName)} (${c.Type})</option>`).join('');
+    },
+
+    createFromCampaign() {
+        const campaignId = document.getElementById('template-source-campaign').value;
+        const name = document.getElementById('template-name').value;
+        const desc = document.getElementById('template-desc').value;
+        
+        if (!campaignId || !name) {
+            alert("Please select a campaign and provide a template name");
+            return;
+        }
+        
+        const campaign = this.campaigns.find(c => c.id === campaignId);
+        if (!campaign) return;
+        
+        // Extract key config from campaign
+        const tplConfig = {
+            Type: campaign.Type,
+            UseGeolocation: campaign.UseGeolocation,
+            UseGMBInteraction: campaign.UseGMBInteraction,
+            UsePhoneNumberClick: campaign.UsePhoneNumberClick,
+            strMiles: campaign.strMiles,
+            TimeOfVisitMin: campaign.TimeOfVisitMin,
+            TimeOfVisitMax: campaign.TimeOfVisitMax,
+            TimeOfReferrelMin: campaign.TimeOfReferrelMin,
+            TimeOfReferrelMax: campaign.TimeOfReferrelMax,
+            TimeinGooglePagesMin: campaign.TimeinGooglePagesMin,
+            TimeinGooglePagesMax: campaign.TimeinGooglePagesMax,
+            DailyLimit: campaign.DailyLimit,
+            numberOfVisits: campaign.numberOfVisits,
+            strGoogleSearchType: campaign.strGoogleSearchType,
+            TargetSearchEngine: campaign.TargetSearchEngine,
+            MaxPages: campaign.MaxPages
+        };
+        
+        this.templates.push({
+            id: `tpl-${Date.now()}`,
+            name: name,
+            desc: desc,
+            config: tplConfig
+        });
+
+        this.saveToStorage(); // V4 FIX #1: Auto-save templates
+        alert(`✅ Template "${name}" created from campaign!`);
+        document.getElementById('template-name').value = '';
+        document.getElementById('template-desc').value = '';
+        this.renderTemplates();
+    },
+
+    // --- UI NAVIGATION ---
+    switchTab(tabName) {
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(`view-${tabName}`).classList.add('active');
+        const btnIndex = ['list', 'wizard', 'templates', 'import'].indexOf(tabName);
+        if (btnIndex >= 0) document.querySelectorAll('.tab-btn')[btnIndex].classList.add('active');
+        if (tabName === 'list') this.renderList();
+        if (tabName === 'templates') { this.renderTemplates(); this.updateTemplateCampaignSelect(); }
+    },
+
+    hideModal() {
+        document.getElementById('modal-container').classList.add('hidden');
+        document.getElementById('modal-container').innerHTML = '';
+    },
+
+    overlayClick(e) {
+        if (e.target === document.getElementById('modal-container')) this.hideModal();
+    },
+
+    // --- CAMPAIGN MANAGEMENT ---
+    createNew() {
+        const newCamp = JSON.parse(JSON.stringify(BASE_TEMPLATE));
+        newCamp.id = this.generateId();
+        newCamp.ProjectName = "New Campaign";
+        newCamp.CreateTime = this.getCreateTime();
+        newCamp.dtTodayDate = this.getISODate();
+        newCamp.nextRun = this.getISODate(1);
+        newCamp.Filename = this.generateFilename();
+        newCamp.doneVisits = `0 of ${newCamp.numberOfVisits}`;
+        newCamp.doneDailyVisits = `0 of ${newCamp.DailyLimit}`;
+        this.campaigns.unshift(newCamp);
+        this.saveToStorage(); // V4 FIX #1: Auto-save
+        this.renderList();
+        this.editCampaign(newCamp.id);
+    },
+
+    cloneCampaign(id) {
+        const original = this.campaigns.find(c => c.id === id);
+        if (!original) return;
+        const clone = JSON.parse(JSON.stringify(original));
+        clone.id = this.generateId();
+        clone.ProjectName += " (Copy)";
+        clone.Filename = this.generateFilename();
+        clone.CreateTime = this.getCreateTime();
+        clone.doneVisits = `0 of ${clone.numberOfVisits}`;
+        clone.doneDailyVisits = `0 of ${clone.DailyLimit}`;
+        this.campaigns.unshift(clone);
+        this.saveToStorage(); // V4 FIX #1: Auto-save
+        this.renderList();
+    },
+
+    deleteCampaign(id) {
+        if (!confirm("Delete this campaign?")) return;
+        // V4 FIX #3: Store for undo
+        const deleted = this.campaigns.find(c => c.id === id);
+        if (deleted) {
+            this.lastDeleted = { campaign: deleted, timestamp: Date.now() };
+        }
+        this.campaigns = this.campaigns.filter(c => c.id !== id);
+        this.selectedIds.delete(id);
+        this.saveToStorage(); // V4 FIX #1: Auto-save
+        this.renderList();
+    },
+
+    // V4 FIX #3: Undo last delete
+    undoDelete() {
+        if (!this.lastDeleted) {
+            alert("Nothing to undo");
+            return;
+        }
+        
+        // Check if deletion is too old (5 minutes)
+        if (Date.now() - this.lastDeleted.timestamp > 5 * 60 * 1000) {
+            alert("Undo expired (5 minute limit)");
+            this.lastDeleted = null;
+            return;
+        }
+        
+        // Restore the campaign
+        this.campaigns.unshift(this.lastDeleted.campaign);
+        this.saveToStorage();
+        this.renderList();
+        
+        const name = this.lastDeleted.campaign.ProjectName;
+        this.lastDeleted = null;
+        alert(`✅ Restored: ${name}`);
+    },
+
+    // --- RENDER LIST ---
+    renderList() {
+        const tbody = document.getElementById('table-body');
+        const filter = document.querySelector('input[placeholder="Search by name or ID..."]').value.toLowerCase();
+        // #3: Read type filter
+        const typeFilter = document.getElementById('type-filter')?.value || '';
+
+        let displayList = this.campaigns;
+        if (filter) {
+            displayList = displayList.filter(c =>
+                (c.ProjectName || "").toLowerCase().includes(filter) ||
+                (c.id || "").includes(filter)
+            );
+        }
+        // #3: Apply type filter
+        if (typeFilter) {
+            displayList = displayList.filter(c => c.Type === typeFilter);
+        }
+
+        // V4 FIX: Count only selected items in filtered view
+        const selectedInFilter = displayList.filter(c => this.selectedIds.has(c.id)).length;
+        
+        document.getElementById('total-campaigns').innerText = displayList.length;
+        document.getElementById('selected-count').innerText = selectedInFilter;
+
+        if (selectedInFilter > 0) {
+            document.getElementById('bulk-tools').classList.remove('hidden');
+        } else {
+            document.getElementById('bulk-tools').classList.add('hidden');
+        }
+
+        tbody.innerHTML = displayList.map(c => {
+            const progress = c.doneVisits || '0 of ?';
+            const nextRunStr = c.nextRun ? new Date(c.nextRun).toLocaleString() : '-';
+            const safeId = this.escHtml(c.id);
+            const safeName = this.escHtml(c.ProjectName);
+            return `
+            <tr>
+                <td class="col-checkbox">
+                    <input type="checkbox" onchange="app.toggleSelect('${safeId}', event)" ${this.selectedIds.has(c.id) ? 'checked' : ''}>
+                </td>
+                <td>
+                    <span class="text-${c.Checked ? 'success' : 'muted'} font-bold">
+                        ${c.Checked ? '● Active' : '○ Paused'}
+                    </span>
+                </td>
+                <td><span class="tag tag-${c.Type}">${c.Type}</span></td>
+                <td>
+                    <div class="font-bold">${safeName}</div>
+                    <div class="text-xs text-muted">${safeId}</div>
+                </td>
+                <td>${c.numberOfVisits} / ${c.DailyLimit}</td>
+                <td class="text-xs text-muted">${progress}</td>
+                <td class="text-xs">${nextRunStr}</td>
+                <td class="col-actions">
+                    <button class="btn btn-primary btn-sm" onclick="app.editCampaign('${safeId}')" title="Edit">✏️</button>
+                    <button class="btn btn-secondary btn-sm" onclick="app.cloneCampaign('${safeId}')" title="Clone">📋</button>
+                    <button class="btn btn-danger btn-sm" onclick="app.deleteCampaign('${safeId}')" title="Delete">✕</button>
+                </td>
+            </tr>`;
+        }).join('');
+    },
+
+    escHtml(str) {
+        return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    },
+
+    // #3: filterList reads from DOM — val param ignored for backward compat
+    filterList(val) { this.renderList(); },
+
+    toggleSelect(id, event = null) {
+        // V4 FIX: Shift+click for range selection
+        if (event && event.shiftKey && this.lastClickedId) {
+            // Find indices
+            const ids = this.campaigns.map(c => c.id);
+            const lastIndex = ids.indexOf(this.lastClickedId);
+            const currentIndex = ids.indexOf(id);
+            
+            if (lastIndex !== -1 && currentIndex !== -1) {
+                const start = Math.min(lastIndex, currentIndex);
+                const end = Math.max(lastIndex, currentIndex);
+                
+                // Toggle all in range
+                for (let i = start; i <= end; i++) {
+                    if (this.selectedIds.has(ids[i])) {
+                        this.selectedIds.delete(ids[i]);
+                    } else {
+                        this.selectedIds.add(ids[i]);
+                    }
+                }
+            }
+        } else {
+            // Normal toggle
+            if (this.selectedIds.has(id)) this.selectedIds.delete(id);
+            else this.selectedIds.add(id);
+        }
+        
+        this.lastClickedId = id;
+        this.renderList();
+    },
+
+    toggleSelectAll(el) {
+        if (el.checked) this.campaigns.forEach(c => this.selectedIds.add(c.id));
+        else this.selectedIds.clear();
+        this.renderList();
+    },
+    
+    // V4 FIX: ESC key to clear selection
+    init() {
+        // Load from localStorage
+        this.loadFromStorage();
+        // V4 FIX #4: Create debounced version for search input (300ms delay)
+        this.filterListDebounced = this.debounce(() => this.renderList(), 300);
+        this.renderList();
+        this.renderTemplates();
+        
+        // V4 FIX: ESC key handler
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.selectedIds.clear();
+                this.lastClickedId = null;
+                this.renderList();
+            }
+        });
+        
+        window.onbeforeunload = () => this.campaigns.length > 0 ? "You have unsaved changes." : null;
+    },
+
+    // #6: Live geo point counter
+    updateGeoCount(el) {
+        const count = el.value.split('\n').filter(l => l.trim()).length;
+        const countEl = document.getElementById('geo-point-count');
+        if (countEl) countEl.textContent = count + ' points';
+    },
+
+    // #5: Toggle mobile percentage input enabled state
+    toggleMobilePct() {
+        const type = document.getElementById('e-DeviceType')?.value;
+        const pctInput = document.getElementById('e-strMobileUseragentPecentage');
+        if (pctInput) {
+            pctInput.disabled = type !== 'Mix';
+            pctInput.style.opacity = type !== 'Mix' ? '0.4' : '1';
+        }
+    },
+
+    // --- EDIT CAMPAIGN (Full Modal) ---
+    editCampaign(id) {
+        const c = this.campaigns.find(x => x.id === id);
+        if (!c) return;
+
+        const nextRunVal = c.nextRun ? c.nextRun.substring(0, 16) : '';
+
+        // #4: Build UsedKeywords display text
+        const usedKwArr = c.UsedKeywords || [];
+        const usedKwText = usedKwArr.length > 0
+            ? this.escHtml(this.arrayToText(usedKwArr))
+            : '(none yet)';
+
+        const modal = document.getElementById('modal-container');
+        modal.innerHTML = `
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <span>✏️ Edit Campaign — <span style="color:var(--text-muted);font-size:0.9em">${this.escHtml(c.ProjectName)}</span></span>
+                <button class="btn btn-secondary btn-sm" onclick="app.hideModal()">✕ Close</button>
+            </div>
+            <div class="modal-body" style="padding-top: 0;">
+
+                <!-- TABS -->
+                <div class="modal-tab-bar">
+                    <button class="modal-tab-btn active" onclick="app.switchEditTab('basic', this)">📋 Basic</button>
+                    <button class="modal-tab-btn" onclick="app.switchEditTab('timing', this)">⏱ Timing</button>
+                    <button class="modal-tab-btn" onclick="app.switchEditTab('targets', this)">🎯 Targets & URLs</button>
+                    <button class="modal-tab-btn" onclick="app.switchEditTab('geo', this)">📍 Geolocation</button>
+                    <button class="modal-tab-btn" onclick="app.switchEditTab('device', this)">💻 Device & Behavior</button>
+                    <button class="modal-tab-btn" onclick="app.switchEditTab('advanced', this)">⚙️ Advanced</button>
+                </div>
+
+                <!-- TAB: BASIC -->
+                <div id="etab-basic" class="modal-tab-pane active">
+                    <div class="section-title">Identity</div>
+                    <div class="field-grid-2" style="margin-bottom:0.75rem">
+                        <div class="field-group field-span-2">
+                            <label class="field-label">Project Name</label>
+                            <input type="text" id="e-ProjectName" value="${this.escHtml(c.ProjectName)}">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Campaign Type</label>
+                            <select id="e-Type">
+                                ${['GSearch','GMap','RefDVisit','GSearchRef','DirectVisit'].map(t =>
+                                    `<option value="${t}" ${c.Type === t ? 'selected' : ''}>${t}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Status</label>
+                            <select id="e-Checked">
+                                <option value="true" ${c.Checked ? 'selected' : ''}>● Active</option>
+                                <option value="false" ${!c.Checked ? 'selected' : ''}>○ Paused</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="section-title">Visit Counts</div>
+                    <div class="field-grid-4" style="margin-bottom:0.75rem">
+                        <div class="field-group">
+                            <label class="field-label">Total Visits</label>
+                            <input type="number" id="e-numberOfVisits" value="${c.numberOfVisits}">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Daily Limit</label>
+                            <input type="number" id="e-DailyLimit" value="${c.DailyLimit}">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Daily Min</label>
+                            <input type="number" id="e-DailyLimitMin" value="${c.DailyLimitMin || '1'}">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Daily Max (0=off)</label>
+                            <input type="number" id="e-DailyLimitMax" value="${c.DailyLimitMax || '0'}">
+                        </div>
+                    </div>
+
+                    <div class="section-title">Schedule</div>
+                    <div class="field-grid-2" style="margin-bottom:0.75rem">
+                        <div class="field-group">
+                            <label class="field-label">Start Time (e.g. 10:00 AM)</label>
+                            <input type="text" id="e-strStartTime" value="${this.escHtml(c.strStartTime || '10:00 AM')}">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">End Time (e.g. 09:00 PM)</label>
+                            <input type="text" id="e-strEndTime" value="${this.escHtml(c.strEndTime || '09:00 PM')}">
+                        </div>
+                        <div class="field-group field-span-2">
+                            <label class="field-label">Next Run (datetime)</label>
+                            <input type="datetime-local" id="e-nextRun" value="${nextRunVal}">
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning" style="font-size:12px;margin-top:1rem">
+                        <strong>Tip:</strong> Changing Total Visits or Daily Limit will NOT reset progress counters.
+                        Use the reset button in Advanced tab if you want to reset progress.
+                    </div>
+                </div>
+
+                <!-- TAB: TIMING -->
+                <div id="etab-timing" class="modal-tab-pane">
+                    <div class="section-title">Visit Duration (seconds)</div>
+                    <div class="field-grid-4" style="margin-bottom:0.75rem">
+                        <div class="field-group">
+                            <label class="field-label">Visit Min</label>
+                            <input type="number" id="e-TimeOfVisitMin" value="${c.TimeOfVisitMin}"
+                                oninput="this.nextElementSibling.textContent = app.secsToHuman(this.value)">
+                            <span class="time-hint">${this.secsToHuman(c.TimeOfVisitMin)}</span>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Visit Max</label>
+                            <input type="number" id="e-TimeOfVisitMax" value="${c.TimeOfVisitMax}"
+                                oninput="this.nextElementSibling.textContent = app.secsToHuman(this.value)">
+                            <span class="time-hint">${this.secsToHuman(c.TimeOfVisitMax)}</span>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Internal Page Min</label>
+                            <input type="number" id="e-TimeOfInternalMin" value="${c.TimeOfInternalMin}"
+                                oninput="this.nextElementSibling.textContent = app.secsToHuman(this.value)">
+                            <span class="time-hint">${this.secsToHuman(c.TimeOfInternalMin)}</span>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Internal Page Max</label>
+                            <input type="number" id="e-TimeOfInternalMax" value="${c.TimeOfInternalMax}"
+                                oninput="this.nextElementSibling.textContent = app.secsToHuman(this.value)">
+                            <span class="time-hint">${this.secsToHuman(c.TimeOfInternalMax)}</span>
+                        </div>
+                    </div>
+
+                    <div class="section-title">Referral Timing (seconds)</div>
+                    <div class="field-grid-4" style="margin-bottom:0.75rem">
+                        <div class="field-group">
+                            <label class="field-label">Referral Min</label>
+                            <input type="number" id="e-TimeOfReferrelMin" value="${c.TimeOfReferrelMin}"
+                                oninput="this.nextElementSibling.textContent = app.secsToHuman(this.value)">
+                            <span class="time-hint">${this.secsToHuman(c.TimeOfReferrelMin)}</span>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Referral Max</label>
+                            <input type="number" id="e-TimeOfReferrelMax" value="${c.TimeOfReferrelMax}"
+                                oninput="this.nextElementSibling.textContent = app.secsToHuman(this.value)">
+                            <span class="time-hint">${this.secsToHuman(c.TimeOfReferrelMax)}</span>
+                        </div>
+                        <div class="field-group"></div>
+                        <div class="field-group"></div>
+                    </div>
+
+                    <div class="section-title">Google Search Timing (seconds)</div>
+                    <div class="alert alert-info" style="font-size:12px;margin-bottom:0.75rem">
+                        Used by GSearch, GMap, and GSearchRef types. Set to 0 for types that don't search.
+                    </div>
+                    <div class="field-grid-4" style="margin-bottom:0.75rem">
+                        <div class="field-group">
+                            <label class="field-label">Google Pages Min</label>
+                            <input type="number" id="e-TimeinGooglePagesMin" value="${c.TimeinGooglePagesMin}"
+                                oninput="this.nextElementSibling.textContent = app.secsToHuman(this.value)">
+                            <span class="time-hint">${this.secsToHuman(c.TimeinGooglePagesMin)}</span>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Google Pages Max</label>
+                            <input type="number" id="e-TimeinGooglePagesMax" value="${c.TimeinGooglePagesMax}"
+                                oninput="this.nextElementSibling.textContent = app.secsToHuman(this.value)">
+                            <span class="time-hint">${this.secsToHuman(c.TimeinGooglePagesMax)}</span>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Max Pages to Browse</label>
+                            <input type="number" id="e-MaxPages" value="${c.MaxPages}">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Internal Visits Count</label>
+                            <input type="number" id="e-InternalVisitsCount" value="${c.InternalVisitsCount || '1'}">
+                        </div>
+                    </div>
+
+                    <div class="section-title">Delay Between Visits (seconds)</div>
+                    <div class="field-grid-4" style="margin-bottom:0.75rem">
+                        <div class="field-group">
+                            <label class="field-label">Min Delay After Visit</label>
+                            <input type="number" id="e-MinDelayAfterVisit" value="${c.MinDelayAfterVisit}"
+                                oninput="this.nextElementSibling.textContent = app.secsToHuman(this.value)">
+                            <span class="time-hint">${this.secsToHuman(c.MinDelayAfterVisit)}</span>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Max Delay After Visit</label>
+                            <input type="number" id="e-MaxDelayAfterVisit" value="${c.MaxDelayAfterVisit}"
+                                oninput="this.nextElementSibling.textContent = app.secsToHuman(this.value)">
+                            <span class="time-hint">${this.secsToHuman(c.MaxDelayAfterVisit)}</span>
+                        </div>
+                        <div class="field-group"></div>
+                        <div class="field-group"></div>
+                    </div>
+                </div>
+
+                <!-- TAB: TARGETS & URLs -->
+                <div id="etab-targets" class="modal-tab-pane">
+                    <div class="section-title">Primary Target</div>
+                    <div class="field-grid-2" style="margin-bottom:0.75rem">
+                        <div class="field-group">
+                            <label class="field-label">Target URL (DirectVisit)</label>
+                            <input type="text" id="e-TargetUrl" value="${this.escHtml(c.TargetUrl || '')}">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Target Name (Business/GMB)</label>
+                            <input type="text" id="e-TargetName" value="${this.escHtml(c.TargetName || '')}">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Target Search Engine</label>
+                            <input type="text" id="e-TargetSearchEngine" value="${this.escHtml(c.TargetSearchEngine || '')}" placeholder="Google">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Google Search Type</label>
+                            <input type="text" id="e-strGoogleSearchType" value="${this.escHtml(c.strGoogleSearchType || 'Default')}">
+                        </div>
+                    </div>
+
+                    <div class="section-title">lstSites — Referral Sources / Maps URLs (one per line)</div>
+                    <div class="field-grid-2" style="margin-bottom:0.75rem">
+                        <div class="field-group field-span-2">
+                            <textarea id="e-lstSites" rows="4" placeholder="https://maps.google.com/...">${this.escHtml(this.arrayToText(c.lstSites))}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="section-title">Keywords — Action URLs / Phone Clicks (one per line)</div>
+                    <div class="alert alert-info" style="font-size:12px;margin-bottom:0.5rem">
+                        These are actions performed during the visit: website URLs, tel:+1234567890, social media links, etc.
+                    </div>
+                    <div class="field-group" style="margin-bottom:0.75rem">
+                        <textarea id="e-Keywords" rows="4" placeholder="tel:+12125551234&#10;https://example.com&#10;https://facebook.com/business">${this.escHtml(this.arrayToText(c.Keywords))}</textarea>
+                    </div>
+
+                    <!-- #4: UsedKeywords read-only display -->
+                    <div class="section-title">UsedKeywords — Already Fired (read-only)</div>
+                    <div class="field-group" style="margin-bottom:0.75rem">
+                        <textarea readonly style="opacity:0.5;cursor:default;font-size:12px" rows="2">${usedKwText}</textarea>
+                    </div>
+
+                    <div class="section-title">lstKeywords — Search Terms (one per line)</div>
+                    <div class="alert alert-info" style="font-size:12px;margin-bottom:0.5rem">
+                        Used by GSearch/GSearchRef: the search keywords typed into Google.
+                    </div>
+                    <div class="field-group" style="margin-bottom:0.75rem">
+                        <textarea id="e-lstKeywords" rows="3" placeholder="plumber miami&#10;emergency plumbing&#10;water heater repair">${this.escHtml(this.arrayToText(c.lstKeywords))}</textarea>
+                    </div>
+
+                    <div class="section-title">lstInternalIgnoreLinks — Internal Pages to Skip (one per line)</div>
+                    <div class="field-group">
+                        <textarea id="e-lstInternalIgnoreLinks" rows="2" placeholder="https://example.com/ignore-page">${this.escHtml(this.arrayToText(c.lstInternalIgnoreLinks))}</textarea>
+                    </div>
+                </div>
+
+                <!-- TAB: GEOLOCATION -->
+                <div id="etab-geo" class="modal-tab-pane">
+                    <div class="section-title">Geolocation Settings</div>
+                    <div class="field-grid-2" style="margin-bottom:0.75rem">
+                        <div class="field-group">
+                            <label class="field-label">Radius (miles)</label>
+                            <input type="number" step="0.5" id="e-strMiles" value="${c.strMiles || '1'}">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">&nbsp;</label>
+                            <div class="toggles-grid" style="grid-template-columns:1fr;">
+                                <label class="toggle-row">
+                                    <input type="checkbox" id="e-UseGeolocation" ${c.UseGeolocation ? 'checked' : ''}>
+                                    <span>Use Geolocation</span>
+                                </label>
+                                <label class="toggle-row">
+                                    <input type="checkbox" id="e-UseXMiles" ${c.UseXMiles ? 'checked' : ''}>
+                                    <span>Use Radius (UseXMiles)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- #6: Live geo point counter in section title -->
+                    <div class="section-title">Current Geolocation Points (<span id="geo-point-count">${(c.lstCustomGeolocations || []).length} points</span>)</div>
+                    <div class="field-group" style="margin-bottom:0.75rem">
+                        <label class="field-label">lstCustomGeolocations — Format: lat:lon (one per line)</label>
+                        <textarea id="e-lstCustomGeolocations" rows="8" style="font-family:monospace;font-size:12px" placeholder="40.712800:-74.006000"
+                            oninput="app.updateGeoCount(this)">${this.escHtml(this.arrayToText(c.lstCustomGeolocations))}</textarea>
+                    </div>
+
+                    <div class="geo-regen">
+                        <div class="font-bold text-sm" style="margin-bottom:0.75rem;color:var(--warning)">⚡ Re-Generate Geolocations</div>
+                        <div class="field-grid-4" style="margin-bottom:0.75rem">
+                            <div class="field-group">
+                                <label class="field-label">Center Latitude</label>
+                                <input type="number" step="any" id="regen-lat" placeholder="40.712800">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Center Longitude</label>
+                                <input type="number" step="any" id="regen-lon" placeholder="-74.006000">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Radius (miles)</label>
+                                <input type="number" step="0.5" id="regen-radius" value="1">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Point Count</label>
+                                <input type="number" id="regen-count" value="75">
+                            </div>
+                        </div>
+                        <button class="btn btn-success btn-sm" onclick="app.regenGeo()">🔄 Generate New Points</button>
+                        <span class="text-xs text-muted" style="margin-left:0.5rem">Will replace the textarea above (save to apply)</span>
+                    </div>
+                </div>
+
+                <!-- TAB: DEVICE & BEHAVIOR -->
+                <div id="etab-device" class="modal-tab-pane">
+                    <div class="section-title">Device Settings</div>
+                    <div class="field-grid-2" style="margin-bottom:0.75rem">
+                        <div class="field-group">
+                            <label class="field-label">Device Type</label>
+                            <!-- #5: onchange triggers mobile % toggle -->
+                            <select id="e-DeviceType" onchange="app.toggleMobilePct()">
+                                ${['Desktop','Mobile','Mix'].map(d =>
+                                    `<option value="${d}" ${c.DeviceType === d ? 'selected' : ''}>${d}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Mobile % (if Mix)</label>
+                            <input type="number" min="0" max="100" id="e-strMobileUseragentPecentage" value="${c.strMobileUseragentPecentage || '0'}">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Next Device</label>
+                            <select id="e-strNextDevice">
+                                ${['Desktop','Mobile'].map(d =>
+                                    `<option value="${d}" ${c.strNextDevice === d ? 'selected' : ''}>${d}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">GMap Retries</label>
+                            <!-- #1: Bug fix — use undefined check instead of falsy fallback -->
+                            <input type="number" id="e-GMapRetries" value="${c.GMapRetries !== undefined ? c.GMapRetries : ''}">
+                        </div>
+                    </div>
+
+                    <div class="section-title">Behavior Flags</div>
+                    <div class="toggles-grid">
+                        <label class="toggle-row">
+                            <input type="checkbox" id="e-UseGMBInteraction" ${c.UseGMBInteraction ? 'checked' : ''}>
+                            <span>Use GMB Interaction</span>
+                        </label>
+                        <label class="toggle-row">
+                            <input type="checkbox" id="e-UseKnowdGraphInteraction" ${c.UseKnowdGraphInteraction ? 'checked' : ''}>
+                            <span>Use Knowledge Graph Interaction</span>
+                        </label>
+                        <label class="toggle-row">
+                            <input type="checkbox" id="e-UsePhoneNumberClick" ${c.UsePhoneNumberClick ? 'checked' : ''}>
+                            <span>Use Phone Number Click</span>
+                        </label>
+                        <label class="toggle-row">
+                            <input type="checkbox" id="e-VisitCompetitor" ${c.VisitCompetitor ? 'checked' : ''}>
+                            <span>Visit Competitor Sites</span>
+                        </label>
+                        <label class="toggle-row">
+                            <input type="checkbox" id="e-MatchExactUrl" ${c.MatchExactUrl ? 'checked' : ''}>
+                            <span>Match Exact URL</span>
+                        </label>
+                    </div>
+                    <!-- #5: Initialize mobile % state after tab renders -->
+                    <script>setTimeout(() => app.toggleMobilePct(), 50);<\/script>
+                </div>
+
+                <!-- TAB: ADVANCED -->
+                <div id="etab-advanced" class="modal-tab-pane">
+                    <div class="section-title">Proxy Settings</div>
+                    <div style="margin-bottom:0.75rem">
+                        <label class="toggle-row" style="margin-bottom:0.5rem; display:inline-flex">
+                            <input type="checkbox" id="e-UseCustomProxy" ${c.UseCustomProxy ? 'checked' : ''}>
+                            <span>Use Custom Proxy</span>
+                        </label>
+                    </div>
+                    <div class="field-group" style="margin-bottom:0.75rem">
+                        <label class="field-label">lstCustomProxies (one per line)</label>
+                        <textarea id="e-lstCustomProxies" rows="4" placeholder="http://user:pass@proxy:port">${this.escHtml(this.arrayToText(c.lstCustomProxies))}</textarea>
+                    </div>
+
+                    <div class="section-title">Language Settings</div>
+                    <div class="field-grid-2" style="margin-bottom:0.75rem">
+                        <div class="field-group">
+                            <label class="toggle-row" style="display:inline-flex;margin-bottom:0.5rem">
+                                <input type="checkbox" id="e-UseCustomLanguage" ${c.UseCustomLanguage ? 'checked' : ''}>
+                                <span>Use Custom Language</span>
+                            </label>
+                            <label class="field-label" style="margin-top:0.5rem">Language Code</label>
+                            <input type="text" id="e-CustomLanguage" value="${this.escHtml(c.CustomLanguage || '')}" placeholder="e.g. en-US">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Author ID</label>
+                            <input type="text" id="e-AuthorId" value="${this.escHtml(c.AuthorId || '')}">
+                            <label class="field-label" style="margin-top:0.75rem">Threads</label>
+                            <input type="text" id="e-Threads" value="${this.escHtml(c.Threads || '')}">
+                        </div>
+                    </div>
+
+                    <div class="section-title">Read-Only / Auto-Generated Fields</div>
+                    <div class="field-grid-2" style="margin-bottom:0.75rem">
+                        <div class="field-group">
+                            <label class="field-label">Campaign ID</label>
+                            <input type="text" value="${this.escHtml(c.id)}" readonly style="opacity:0.5;cursor:default">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Filename</label>
+                            <input type="text" value="${this.escHtml(c.Filename)}" readonly style="opacity:0.5;cursor:default">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Created At</label>
+                            <input type="text" value="${this.escHtml(c.CreateTime)}" readonly style="opacity:0.5;cursor:default">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Progress</label>
+                            <input type="text" value="${this.escHtml(c.doneVisits)} | ${this.escHtml(c.doneDailyVisits)}" readonly style="opacity:0.5;cursor:default">
+                        </div>
+                    </div>
+
+                    <div class="section-title" style="color:var(--danger)">Danger Zone</div>
+                    <button class="btn btn-danger btn-sm" onclick="app.resetProgress('${c.id}')">🔄 Reset Progress Counters</button>
+                    <span class="text-xs text-muted" style="margin-left:0.5rem">Resets doneVisits and doneDailyVisits to 0</span>
+                </div>
+
+            </div><!-- end modal-body -->
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.hideModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="app.saveEditedCampaign('${c.id}')">💾 Save Changes</button>
+            </div>
+        </div>`;
+
+        modal.classList.remove('hidden');
+    },
+
+    switchEditTab(tabName, btn) {
+        document.querySelectorAll('.modal-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.modal-tab-pane').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(`etab-${tabName}`).classList.add('active');
+    },
+
+    regenGeo() {
+        const lat = parseFloat(document.getElementById('regen-lat').value);
+        const lon = parseFloat(document.getElementById('regen-lon').value);
+        const radius = parseFloat(document.getElementById('regen-radius').value) || 1;
+        const count = parseInt(document.getElementById('regen-count').value) || 75;
+        if (isNaN(lat) || isNaN(lon)) { alert('Enter valid latitude and longitude first.'); return; }
+        const pts = this.generateGeolocations(lat, lon, radius, count);
+        const ta = document.getElementById('e-lstCustomGeolocations');
+        ta.value = pts.join('\n');
+        // #6: Update live counter after regen
+        this.updateGeoCount(ta);
+    },
+
+    resetProgress(id) {
+        const c = this.campaigns.find(x => x.id === id);
+        if (!c) return;
+        c.doneVisits = `0 of ${c.numberOfVisits}`;
+        c.doneDailyVisits = `0 of ${c.DailyLimit}`;
+        c.UsedKeywords = [];
+        this.renderList();
+        // Update readonly display in modal if open
+        const progressEl = document.querySelector('[value*="of"][readonly]');
+        if (progressEl) progressEl.value = `${c.doneVisits} | ${c.doneDailyVisits}`;
+        alert('Progress reset to 0.');
+    },
+
+    saveEditedCampaign(id) {
+        const c = this.campaigns.find(x => x.id === id);
+        if (!c) return;
+
+        const g = (eid) => { const el = document.getElementById(eid); return el ? el.value : null; };
+        const gb = (eid) => { const el = document.getElementById(eid); return el ? el.checked : null; };
+
+        // V4 FIX #3: Use single validation function
+        const campaignData = {
+            ProjectName: g('e-ProjectName'),
+            Type: g('e-Type'),
+            UseGeolocation: gb('e-UseGeolocation'),
+            lstCustomGeolocations: g('e-lstCustomGeolocations')?.split('\n').filter(l => l.trim()) || [],
+            DailyLimit: g('e-DailyLimit'),
+            numberOfVisits: g('e-numberOfVisits')
+        };
+        
+        const errors = this.validateCampaign(campaignData, true);
+        
+        // Also check time format (specific to edit modal)
+        const startTime = g('e-strStartTime');
+        if (startTime && !/^\d{1,2}:\d{2}\s*(AM|PM)$/i.test(startTime)) {
+            errors.push(`Start Time "${startTime}" should be like "10:00 AM"`);
+        }
+        
+        const endTime = g('e-strEndTime');
+        if (endTime && !/^\d{1,2}:\d{2}\s*(AM|PM)$/i.test(endTime)) {
+            errors.push(`End Time "${endTime}" should be like "09:00 PM"`);
+        }
+        
+        // Show validation errors if any
+        if (errors.length > 0) {
+            const errorHtml = `
+                <div class="validation-panel">
+                    <div style="font-weight:600;margin-bottom:0.5rem;color:var(--danger)">⚠️ ${errors.length} Issue${errors.length > 1 ? 's' : ''} Found:</div>
+                    ${errors.map(e => `
+                        <div class="validation-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            ${e}
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="margin-top:1rem;text-align:right">
+                    <button class="btn btn-secondary btn-sm" onclick="app.hideModal()">Cancel</button>
+                    <button class="btn btn-primary btn-sm" onclick="app.saveEditedCampaignForce('${id}')">Save Anyway</button>
+                </div>
+            `;
+            
+            // Replace modal footer with validation panel
+            const modalBody = document.querySelector('.modal-body');
+            if (modalBody) {
+                const existingPanel = modalBody.querySelector('.validation-panel');
+                if (existingPanel) existingPanel.remove();
+                modalBody.insertAdjacentHTML('afterbegin', errorHtml);
+                modalBody.scrollTop = 0;
+            }
+            return;
+        }
+
+        // --- Tab 1: Basic ---
+        c.ProjectName = g('e-ProjectName') || c.ProjectName;
+        c.Type = g('e-Type') || c.Type;
+        c.Checked = g('e-Checked') === 'true';
+
+        const newTotal = g('e-numberOfVisits');
+        const newDaily = g('e-DailyLimit');
+        if (newTotal !== null && newTotal !== c.numberOfVisits) {
+            c.numberOfVisits = newTotal;
+        }
+        if (newDaily !== null && newDaily !== c.DailyLimit) {
+            c.DailyLimit = newDaily;
+        }
+        c.DailyLimitMin = g('e-DailyLimitMin') || c.DailyLimitMin;
+        c.DailyLimitMax = g('e-DailyLimitMax') || c.DailyLimitMax;
+        c.strStartTime = g('e-strStartTime') || c.strStartTime;
+        c.strEndTime = g('e-strEndTime') || c.strEndTime;
+        const nextRunRaw = g('e-nextRun');
+        if (nextRunRaw) c.nextRun = nextRunRaw.includes('T') ? nextRunRaw + ':00' : nextRunRaw;
+
+        // --- Tab 2: Timing ---
+        c.TimeOfVisitMin = g('e-TimeOfVisitMin') || c.TimeOfVisitMin;
+        c.TimeOfVisitMax = g('e-TimeOfVisitMax') || c.TimeOfVisitMax;
+        c.TimeOfInternalMin = g('e-TimeOfInternalMin') || c.TimeOfInternalMin;
+        c.TimeOfInternalMax = g('e-TimeOfInternalMax') || c.TimeOfInternalMax;
+        c.TimeOfReferrelMin = g('e-TimeOfReferrelMin') || c.TimeOfReferrelMin;
+        c.TimeOfReferrelMax = g('e-TimeOfReferrelMax') || c.TimeOfReferrelMax;
+        c.TimeinGooglePagesMin = g('e-TimeinGooglePagesMin') !== null ? g('e-TimeinGooglePagesMin') : c.TimeinGooglePagesMin;
+        c.TimeinGooglePagesMax = g('e-TimeinGooglePagesMax') !== null ? g('e-TimeinGooglePagesMax') : c.TimeinGooglePagesMax;
+        c.MaxPages = g('e-MaxPages') !== null ? g('e-MaxPages') : c.MaxPages;
+        c.InternalVisitsCount = g('e-InternalVisitsCount') || c.InternalVisitsCount;
+        c.MinDelayAfterVisit = g('e-MinDelayAfterVisit') || c.MinDelayAfterVisit;
+        c.MaxDelayAfterVisit = g('e-MaxDelayAfterVisit') || c.MaxDelayAfterVisit;
+
+        // --- Tab 3: Targets ---
+        c.TargetUrl = g('e-TargetUrl') !== null ? g('e-TargetUrl') : c.TargetUrl;
+        c.TargetName = g('e-TargetName') !== null ? g('e-TargetName') : c.TargetName;
+        c.TargetSearchEngine = g('e-TargetSearchEngine') !== null ? g('e-TargetSearchEngine') : c.TargetSearchEngine;
+        c.strGoogleSearchType = g('e-strGoogleSearchType') || c.strGoogleSearchType;
+        const lstSitesVal = g('e-lstSites');
+        if (lstSitesVal !== null) c.lstSites = this.textToArray(lstSitesVal);
+        const keywordsVal = g('e-Keywords');
+        if (keywordsVal !== null) c.Keywords = this.textToArray(keywordsVal);
+        const lstKwVal = g('e-lstKeywords');
+        if (lstKwVal !== null) c.lstKeywords = this.textToArray(lstKwVal);
+        const ignoreVal = g('e-lstInternalIgnoreLinks');
+        if (ignoreVal !== null) c.lstInternalIgnoreLinks = this.textToArray(ignoreVal);
+
+        // --- Tab 4: Geolocation ---
+        c.strMiles = g('e-strMiles') || c.strMiles;
+        const useGeo = gb('e-UseGeolocation');
+        if (useGeo !== null) c.UseGeolocation = useGeo;
+        const useXMiles = gb('e-UseXMiles');
+        if (useXMiles !== null) c.UseXMiles = useXMiles;
+        const geoText = g('e-lstCustomGeolocations');
+        if (geoText !== null) c.lstCustomGeolocations = this.textToArray(geoText);
+
+        // --- Tab 5: Device & Behavior ---
+        c.DeviceType = g('e-DeviceType') || c.DeviceType;
+        c.strMobileUseragentPecentage = g('e-strMobileUseragentPecentage') !== null ? g('e-strMobileUseragentPecentage') : c.strMobileUseragentPecentage;
+        c.strNextDevice = g('e-strNextDevice') || c.strNextDevice;
+        c.GMapRetries = g('e-GMapRetries') !== null ? g('e-GMapRetries') : c.GMapRetries;
+        const useGMB = gb('e-UseGMBInteraction');
+        if (useGMB !== null) c.UseGMBInteraction = useGMB;
+        const useKG = gb('e-UseKnowdGraphInteraction');
+        if (useKG !== null) c.UseKnowdGraphInteraction = useKG;
+        const usePhone = gb('e-UsePhoneNumberClick');
+        if (usePhone !== null) c.UsePhoneNumberClick = usePhone;
+        const visitComp = gb('e-VisitCompetitor');
+        if (visitComp !== null) c.VisitCompetitor = visitComp;
+        const matchUrl = gb('e-MatchExactUrl');
+        if (matchUrl !== null) c.MatchExactUrl = matchUrl;
+
+        // --- Tab 6: Advanced ---
+        const useProxy = gb('e-UseCustomProxy');
+        if (useProxy !== null) c.UseCustomProxy = useProxy;
+        const proxiesText = g('e-lstCustomProxies');
+        if (proxiesText !== null) c.lstCustomProxies = this.textToArray(proxiesText);
+        const useLang = gb('e-UseCustomLanguage');
+        if (useLang !== null) c.UseCustomLanguage = useLang;
+        c.CustomLanguage = g('e-CustomLanguage') !== null ? g('e-CustomLanguage') : c.CustomLanguage;
+        c.AuthorId = g('e-AuthorId') !== null ? g('e-AuthorId') : c.AuthorId;
+        c.Threads = g('e-Threads') !== null ? g('e-Threads') : c.Threads;
+
+        // --- VALIDATION ---
+        // GMapRetriesFails MUST be integer (preserve runtime value, just enforce type)
+        if (typeof c.GMapRetriesFails !== 'number') c.GMapRetriesFails = parseInt(c.GMapRetriesFails) || 0;
+        // Ensure progress strings are correct format
+        if (c.doneVisits && !c.doneVisits.includes(' of ')) {
+            c.doneVisits = `0 of ${c.numberOfVisits}`;
+        }
+        if (c.doneDailyVisits && !c.doneDailyVisits.includes(' of ')) {
+            c.doneDailyVisits = `0 of ${c.DailyLimit}`;
+        }
+
+        this.saveToStorage(); // V4 FIX #1: Auto-save
+        this.hideModal();
+        this.renderList();
+    },
+
+    // --- BULK ACTIONS ---
+    
+    // V4 NEW: Save despite validation warnings
+    saveEditedCampaignForce(id) {
+        // Remove validation panel and save
+        const modalBody = document.querySelector('.modal-body');
+        if (modalBody) {
+            const panel = modalBody.querySelector('.validation-panel');
+            if (panel) panel.remove();
+        }
+        // Call original save function (it will re-validate but user already confirmed)
+        this.saveEditedCampaign(id);
+    },
+    
+    // V4 NEW: Campaign Comparison
+    compareCampaigns() {
+        const selected = this.campaigns.filter(c => this.selectedIds.has(c.id));
+        if (selected.length < 2 || selected.length > 3) {
+            alert("Select 2-3 campaigns to compare");
+            return;
+        }
+        
+        const fields = [
+            { key: 'ProjectName', label: 'Project Name' },
+            { key: 'Type', label: 'Type' },
+            { key: 'numberOfVisits', label: 'Total Visits' },
+            { key: 'DailyLimit', label: 'Daily Limit' },
+            { key: 'strStartTime', label: 'Start Time' },
+            { key: 'strEndTime', label: 'End Time' },
+            { key: 'DeviceType', label: 'Device' },
+            { key: 'UseGeolocation', label: 'Use Geo' },
+            { key: 'strMiles', label: 'Radius' },
+            { key: 'TimeOfVisitMin', label: 'Visit Min' },
+            { key: 'TimeOfVisitMax', label: 'Visit Max' }
+        ];
+        
+        // Find differing fields
+        const diffs = new Set();
+        for (let i = 0; i < fields.length; i++) {
+            const vals = selected.map(c => String(c[fields[i].key] || ''));
+            if (new Set(vals).size > 1) {
+                diffs.add(fields[i].key);
+            }
+        }
+        
+        const modal = document.getElementById('modal-container');
+        modal.innerHTML = `
+            <div class="modal modal-lg">
+                <div class="modal-header">
+                    📊 Compare ${selected.length} Campaigns
+                    <button class="btn btn-secondary btn-sm" onclick="app.hideModal()">✕ Close</button>
+                </div>
+                <div class="modal-body">
+                    <div class="compare-grid">
+                        ${selected.map(c => `
+                            <div class="compare-col">
+                                <h4>${this.escHtml(c.ProjectName)}</h4>
+                                <div style="font-size:11px;color:var(--text-muted);margin-bottom:1rem">${c.Type} | ID: ${c.id}</div>
+                                ${fields.map(f => `
+                                    <div class="compare-row ${diffs.has(f.key) ? 'diff' : ''}">
+                                        <span class="label">${f.label}</span>
+                                        <span class="val">${this.escHtml(String(c[f.key] || '-'))}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${diffs.size > 0 ? `<div class="alert alert-warning" style="margin-top:1rem;font-size:12px">⚠️ ${diffs.size} fields differ between campaigns</div>` : ''}
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="app.hideModal()">Close</button>
+                </div>
+            </div>
+        `;
+        modal.classList.remove('hidden');
+    },
+
+    bulkDelete() {
+        // V4 FIX: Only delete selected campaigns in current filtered view
+        const filter = document.querySelector('input[placeholder="Search by name or ID..."]').value.toLowerCase();
+        const typeFilter = document.getElementById('type-filter')?.value || '';
+        
+        let displayList = this.campaigns;
+        if (filter) {
+            displayList = displayList.filter(c =>
+                (c.ProjectName || "").toLowerCase().includes(filter) ||
+                (c.id || "").includes(filter)
+            );
+        }
+        if (typeFilter) {
+            displayList = displayList.filter(c => c.Type === typeFilter);
+        }
+        
+        // Get only selected IDs in filtered view
+        const selectedInFilter = displayList.filter(c => this.selectedIds.has(c.id));
+        
+        if (selectedInFilter.length === 0) {
+            alert('No campaigns selected in current view');
+            return;
+        }
+        
+        if (!confirm(`Delete ${selectedInFilter.length} selected campaigns?`)) return;
+        
+        // V4 FIX #3: Store for undo (last deleted only)
+        if (selectedInFilter.length > 0) {
+            this.lastDeleted = { campaign: selectedInFilter[0], timestamp: Date.now(), bulk: selectedInFilter.length };
+        }
+        
+        // Delete only selected campaigns
+        const selectedIds = new Set(selectedInFilter.map(c => c.id));
+        this.campaigns = this.campaigns.filter(c => !selectedIds.has(c.id));
+        this.selectedIds.clear();
+        this.saveToStorage(); // V4 FIX #1: Auto-save
+        this.renderList();
+    },
+
+    // #8: Export selected campaigns
+    exportSelected() {
+        const selected = this.campaigns.filter(c => this.selectedIds.has(c.id));
+        if (selected.length === 0) return;
+        
+        // V4 FIX #3: Use single validation function
+        const allErrors = [];
+        selected.forEach((c, idx) => {
+            const errors = this.validateCampaign(c);
+            if (errors.length > 0) {
+                allErrors.push(`Campaign #${idx + 1} (${c.ProjectName || 'unnamed'}): ${errors.join(', ')}`);
+            }
+        });
+
+        if (allErrors.length > 0) {
+            const errorMsg = `⚠️ ${allErrors.length} issue(s) in selected campaigns:\n\n${allErrors.slice(0, 5).join('\n')}\n\nExport anyway?`;
+            if (!confirm(errorMsg)) {
+                return;
+            }
+        }
+        
+        selected.forEach(c => {
+            if (typeof c.GMapRetriesFails !== 'number') c.GMapRetriesFails = parseInt(c.GMapRetriesFails) || 0;
+        });
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(selected, null, 2));
+        const a = document.createElement('a');
+        a.setAttribute("href", dataStr);
+        a.setAttribute("download", `ctr_selected_${selected.length}_campaigns_v4.json`);
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    },
+
+    bulkEdit() {
+        const modal = document.getElementById('modal-container');
+        const content = `
+        <div class="modal modal-sm">
+            <div class="modal-header">Bulk Edit — ${this.selectedIds.size} Selected <button class="btn btn-secondary btn-sm" onclick="app.hideModal()">✕</button></div>
+            <div class="modal-body">
+                <div class="alert alert-info" style="font-size:12px">Leave fields empty to keep existing values.</div>
+
+                <div class="section-title">Visit Counts</div>
+                <div class="field-grid-2" style="margin-bottom:0.75rem">
+                    <div class="field-group"><label class="field-label">Total Visits</label><input type="number" id="bulk-total" placeholder="No Change"></div>
+                    <div class="field-group"><label class="field-label">Daily Limit</label><input type="number" id="bulk-daily" placeholder="No Change"></div>
+                </div>
+
+                <div class="section-title">Visit Timing (seconds)</div>
+                <div class="field-grid-2" style="margin-bottom:0.75rem">
+                    <div class="field-group"><label class="field-label">Visit Min</label><input type="number" id="bulk-vmin" placeholder="No Change"></div>
+                    <div class="field-group"><label class="field-label">Visit Max</label><input type="number" id="bulk-vmax" placeholder="No Change"></div>
+                    <div class="field-group"><label class="field-label">Referral Min</label><input type="number" id="bulk-rmin" placeholder="No Change"></div>
+                    <div class="field-group"><label class="field-label">Referral Max</label><input type="number" id="bulk-rmax" placeholder="No Change"></div>
+                    <div class="field-group"><label class="field-label">Delay Min</label><input type="number" id="bulk-dmin" placeholder="No Change"></div>
+                    <div class="field-group"><label class="field-label">Delay Max</label><input type="number" id="bulk-dmax" placeholder="No Change"></div>
+                </div>
+
+                <div class="section-title">Schedule</div>
+                <div class="field-grid-2" style="margin-bottom:0.75rem">
+                    <div class="field-group"><label class="field-label">Start Time</label><input type="text" id="bulk-start" placeholder="e.g. 10:00 AM"></div>
+                    <div class="field-group"><label class="field-label">End Time</label><input type="text" id="bulk-end" placeholder="e.g. 09:00 PM"></div>
+                </div>
+
+                <div class="section-title">Device</div>
+                <div class="field-grid-2" style="margin-bottom:0.75rem">
+                    <div class="field-group">
+                        <label class="field-label">Device Type</label>
+                        <select id="bulk-device">
+                            <option value="">No Change</option>
+                            <option value="Desktop">Desktop</option>
+                            <option value="Mobile">Mobile</option>
+                            <option value="Mix">Mix</option>
+                        </select>
+                    </div>
+                    <div class="field-group"><label class="field-label">Mobile %</label><input type="number" id="bulk-mobilepct" placeholder="No Change" min="0" max="100"></div>
+                </div>
+
+                <div class="section-title">Status</div>
+                <div class="field-group" style="margin-bottom:0.75rem">
+                    <select id="bulk-status">
+                        <option value="">No Change</option>
+                        <option value="true">Set Active</option>
+                        <option value="false">Set Paused</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.hideModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="app.applyBulkAll()">Apply to ${this.selectedIds.size} Campaigns</button>
+            </div>
+        </div>`;
+        modal.innerHTML = content;
+        modal.classList.remove('hidden');
+    },
+
+    applyBulkAll() {
+        const total = document.getElementById('bulk-total').value;
+        const daily = document.getElementById('bulk-daily').value;
+        const vmin = document.getElementById('bulk-vmin').value;
+        const vmax = document.getElementById('bulk-vmax').value;
+        const rmin = document.getElementById('bulk-rmin').value;
+        const rmax = document.getElementById('bulk-rmax').value;
+        const dmin = document.getElementById('bulk-dmin').value;
+        const dmax = document.getElementById('bulk-dmax').value;
+        const startT = document.getElementById('bulk-start').value;
+        const endT = document.getElementById('bulk-end').value;
+        const device = document.getElementById('bulk-device').value;
+        const mobilePct = document.getElementById('bulk-mobilepct').value;
+        const status = document.getElementById('bulk-status').value;
+
+        this.campaigns.forEach(c => {
+            if (!this.selectedIds.has(c.id)) return;
+            if (total) { c.numberOfVisits = total; c.doneVisits = `0 of ${total}`; }
+            if (daily) { c.DailyLimit = daily; c.doneDailyVisits = `0 of ${daily}`; }
+            if (vmin) c.TimeOfVisitMin = vmin;
+            if (vmax) c.TimeOfVisitMax = vmax;
+            if (rmin) c.TimeOfReferrelMin = rmin;
+            if (rmax) c.TimeOfReferrelMax = rmax;
+            if (dmin) c.MinDelayAfterVisit = dmin;
+            if (dmax) c.MaxDelayAfterVisit = dmax;
+            if (startT) c.strStartTime = startT;
+            if (endT) c.strEndTime = endT;
+            if (device) c.DeviceType = device;
+            if (mobilePct) c.strMobileUseragentPecentage = mobilePct;
+            if (status !== '') c.Checked = status === 'true';
+        });
+        this.saveToStorage(); // V4 FIX #1: Auto-save
+        this.hideModal();
+        this.renderList();
+    },
+
+    // --- WIZARD GENERATOR ---
+    clearWizard() {
+        ['wiz-name','wiz-url','wiz-keywords','wiz-lat','wiz-lon','wiz-phone','wiz-map'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        // Leave wiz-visits, wiz-vmin, wiz-vmax, wiz-daily, wiz-delaymin at their defaults
+    },
+
+    runWizard() {
+        const name = document.getElementById('wiz-name').value;
+        const url = document.getElementById('wiz-url').value;
+        const keywords = document.getElementById('wiz-keywords').value.split(',').map(s => s.trim()).filter(x => x);
+        const lat = parseFloat(document.getElementById('wiz-lat').value);
+        const lon = parseFloat(document.getElementById('wiz-lon').value);
+        const phone = document.getElementById('wiz-phone').value;
+        const mapUrl = document.getElementById('wiz-map').value;
+
+        if (!name) return alert("Project Name is required");
+        if (isNaN(lat) || isNaN(lon)) return alert("Valid Coordinates required");
+
+        const variations = parseInt(document.getElementById('wiz-variations').value);
+
+        // #9: Read configurable visit/timing values
+        const visits = parseInt(document.getElementById('wiz-visits')?.value) || 1000;
+        const vmin = document.getElementById('wiz-vmin')?.value || '180';
+        const vmax = document.getElementById('wiz-vmax')?.value || '250';
+        const daily = document.getElementById('wiz-daily')?.value || '3';
+        const delayMin = document.getElementById('wiz-delaymin')?.value || '1300';
+
+        const types = [];
+        if (document.getElementById('gen-gsearch').checked) types.push('GSearch');
+        if (document.getElementById('gen-gmap').checked) types.push('GMap');
+        if (document.getElementById('gen-ref').checked) types.push('RefDVisit');
+        if (document.getElementById('gen-direct').checked) types.push('DirectVisit');
+        // #9: GSearchRef type
+        if (document.getElementById('gen-gsearchref').checked) types.push('GSearchRef');
+
+        if (types.length === 0) return alert("Select at least one campaign type");
+
+        let count = 0;
+        types.forEach(type => {
+            for (let i = 0; i < variations; i++) {
+                const c = JSON.parse(JSON.stringify(BASE_TEMPLATE));
+                c.id = this.generateId();
+                c.Filename = this.generateFilename();
+                c.CreateTime = this.getCreateTime();
+                c.dtTodayDate = this.getISODate();
+                c.nextRun = this.getISODate(1 + i);
+                c.Type = type;
+
+                const variants = ['A', 'B', 'C'];
+                c.ProjectName = `${name} | ${type} ${variants[i] || i + 1}`;
+
+                // #9: Apply configurable visit counts and timing
+                c.numberOfVisits = String(visits);
+                c.DailyLimit = daily;
+                c.TimeOfVisitMin = "" + this.jitter(parseInt(vmin));
+                c.TimeOfVisitMax = "" + this.jitter(parseInt(vmax));
+                c.MinDelayAfterVisit = "" + this.jitter(parseInt(delayMin));
+                c.MaxDelayAfterVisit = "" + this.jitter(Math.floor(parseInt(delayMin) * 1.5));
+
+                if (type === 'GSearch') {
+                    c.TimeinGooglePagesMin = "" + this.jitter(15);
+                    c.TimeinGooglePagesMax = "" + this.jitter(45);
+                    c.TargetSearchEngine = "Google";
+                    c.MaxPages = "3";
+                    c.lstKeywords = keywords;
+                    c.lstSites = [mapUrl || url].filter(x => x);
+                } else if (type === 'GMap') {
+                    c.TimeinGooglePagesMin = "10";
+                    c.TimeinGooglePagesMax = "30";
+                    c.TimeOfReferrelMin = "" + this.jitter(30);
+                    c.TimeOfReferrelMax = "" + this.jitter(90);
+                    c.lstSites = mapUrl ? [mapUrl] : [];
+                    c.Keywords = phone ? [`tel:${phone}`] : [];
+                    if (url) c.Keywords.push(url);
+                } else if (type === 'RefDVisit') {
+                    c.TimeOfReferrelMin = "" + this.jitter(30);
+                    c.TimeOfReferrelMax = "" + this.jitter(90);
+                    c.lstSites = mapUrl ? [mapUrl] : [];
+                    c.Keywords = url ? [url] : [];
+                } else if (type === 'DirectVisit') {
+                    c.TimeOfReferrelMin = "0";
+                    c.UseGeolocation = false;
+                    c.TargetUrl = url;
+                    c.Keywords = url ? [url] : [];
+                } else if (type === 'GSearchRef') {
+                    // #9: GSearchRef campaign type handler
+                    c.TimeinGooglePagesMin = "" + this.jitter(15);
+                    c.TimeinGooglePagesMax = "" + this.jitter(45);
+                    c.TargetSearchEngine = "Google";
+                    c.MaxPages = "3";
+                    c.lstKeywords = keywords;
+                    c.lstSites = mapUrl ? [mapUrl] : [];
+                    c.Keywords = url ? [url] : [];
+                    c.TimeOfReferrelMin = "" + this.jitter(30);
+                    c.TimeOfReferrelMax = "" + this.jitter(90);
+                }
+
+                c.doneVisits = `0 of ${c.numberOfVisits}`;
+                c.doneDailyVisits = `0 of ${c.DailyLimit}`;
+
+                if (type !== 'DirectVisit') {
+                    c.lstCustomGeolocations = this.generateGeolocations(lat, lon, 1 + (i * 0.5), 75);
+                }
+
+                this.campaigns.unshift(c);
+                count++;
+            }
+        });
+
+        alert(`Generated ${count} campaigns successfully!`);
+        this.switchTab('list');
+    },
+
+    generateGeolocations(lat, lon, radius, count) {
+        const points = [];
+        const latRange = radius / 69;
+        const lonRange = radius / (69 * Math.cos(lat * Math.PI / 180));
+        for (let k = 0; k < count; k++) {
+            const rLat = lat + (Math.random() * latRange * 2 - latRange);
+            const rLon = lon + (Math.random() * lonRange * 2 - lonRange);
+            points.push(`${rLat.toFixed(6)}:${rLon.toFixed(6)}`);
+        }
+        return points;
+    },
+
+    // --- FILE I/O ---
+    handleFileUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const json = JSON.parse(e.target.result);
+                if (Array.isArray(json)) {
+                    // #7: Check import mode
+                    const mode = document.querySelector('input[name="import-mode"]:checked')?.value || 'replace';
+                    if (mode === 'merge') {
+                        this.campaigns = [...this.campaigns, ...json];
+                    } else {
+                        this.campaigns = json;
+                    }
+                    this.renderList();
+                    this.switchTab('list');
+                    alert(`Loaded ${json.length} campaigns (${mode === 'merge' ? 'merged' : 'replaced'})`);
+                } else {
+                    alert("Invalid file: Root must be a JSON array");
+                }
+            } catch (err) {
+                alert("Error parsing JSON: " + err.message);
+            }
+        };
+        reader.readAsText(file);
+    },
+
+    loadFromTextarea() {
+        try {
+            const txt = document.getElementById('json-editor').value;
+            const json = JSON.parse(txt);
+            if (Array.isArray(json)) {
+                // #7: Check import mode
+                const mode = document.querySelector('input[name="import-mode"]:checked')?.value || 'replace';
+                if (mode === 'merge') {
+                    this.campaigns = [...this.campaigns, ...json];
+                } else {
+                    this.campaigns = json;
+                }
+                this.renderList();
+                this.switchTab('list');
+            } else {
+                alert("Root must be a JSON array");
+            }
+        } catch (err) {
+            alert("Error: " + err.message);
+        }
+    },
+
+    downloadJSON() {
+        // V4 FIX #3: Use single validation function
+        const allErrors = [];
+        this.campaigns.forEach((c, idx) => {
+            const errors = this.validateCampaign(c);
+            if (errors.length > 0) {
+                allErrors.push(`Campaign #${idx + 1} (${c.ProjectName || 'unnamed'}): ${errors.join(', ')}`);
+            }
+        });
+
+        if (allErrors.length > 0) {
+            const errorMsg = `⚠️ ${allErrors.length} validation issue(s) found:\n\n${allErrors.slice(0, 5).join('\n')}${allErrors.length > 5 ? '\n...and ' + (allErrors.length - 5) + ' more' : ''}\n\nFix these before exporting?`;
+            if (!confirm(errorMsg)) {
+                return; // User cancelled to fix issues
+            }
+        }
+
+        // Ensure GMapRetriesFails is integer (preserve value, just enforce type)
+        this.campaigns.forEach(c => {
+            if (typeof c.GMapRetriesFails !== 'number') c.GMapRetriesFails = parseInt(c.GMapRetriesFails) || 0;
+        });
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.campaigns, null, 2));
+        const a = document.createElement('a');
+        a.setAttribute("href", dataStr);
+        a.setAttribute("download", "ctr_campaigns_v4.json"); // V4 FIX #4: Updated filename
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    }
+};
+
+app.init();
+</script>
+</body>
+</html>
