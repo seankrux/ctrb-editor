@@ -512,7 +512,7 @@
 <div id="toast-container" class="toast-container"></div>
 
 <!-- AI AGENT CHAT BUBBLE (V4.4) -->
-<div id="chat-bubble" class="chat-bubble hidden">
+<div id="chat-bubble" class="chat-bubble">
     <div id="chat-window" class="chat-window hidden">
         <div class="chat-header">
             <div class="chat-header-title">
@@ -690,6 +690,11 @@ const app = {
             if (e.ctrlKey && (e.key === '/' || e.key === '?')) {
                 e.preventDefault();
                 app.showKeyboardShortcuts();
+            }
+            // Ctrl+H - Toggle AI chat assistant
+            if (e.ctrlKey && e.key === 'h' && !e.target.matches('input, textarea')) {
+                e.preventDefault();
+                app.toggleChat();
             }
         });
         
