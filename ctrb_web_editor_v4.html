@@ -184,6 +184,27 @@
         .validation-item:last-child { margin-bottom: 0; }
         .validation-item svg { flex-shrink: 0; }
 
+        /* V4.3 NEW: Toast Notifications */
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; min-width: 300px; max-width: 500px; animation: slideIn 0.3s ease; pointer-events: auto; }
+        .toast.toast-success { border-color: var(--success); }
+        .toast.toast-error { border-color: var(--danger); }
+        .toast.toast-warning { border-color: var(--warning); }
+        .toast.toast-info { border-color: var(--primary); }
+        .toast-icon { flex-shrink: 0; }
+        .toast-content { flex: 1; font-size: 13px; line-height: 1.4; }
+        .toast-close { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; flex-shrink: 0; }
+        .toast-close:hover { color: var(--text-main); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+        .toast.hiding { animation: slideOut 0.3s ease forwards; }
+
+        /* V4.3 NEW: Loading Overlay */
+        .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15,23,42,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px); }
+        .loading-spinner { border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; width: 48px; height: 48px; animation: spin 1s linear infinite; }
+        .loading-text { margin-top: 1rem; color: var(--text-main); font-size: 14px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
     </style>
 </head>
 <body>
@@ -203,6 +224,7 @@
     <div class="actions">
         <button class="btn btn-primary btn-sm" onclick="app.createNew()">+ New Campaign</button>
         <button class="btn btn-secondary btn-sm" onclick="app.undoDelete()" title="Undo last delete (Ctrl+Z)">↩️ Undo Delete</button>
+        <button class="btn btn-secondary btn-sm" onclick="app.showKeyboardShortcuts()" title="View keyboard shortcuts (Ctrl+/)">⌨️ Shortcuts</button>
     </div>
 </header>
 
@@ -450,6 +472,9 @@
 <div id="modal-container" class="modal-overlay hidden" onclick="app.overlayClick(event)">
 </div>
 
+<!-- TOAST CONTAINER (V4.3) -->
+<div id="toast-container" class="toast-container"></div>
+
 <script>
 const BASE_TEMPLATE = {
     "strGoogleSearchType": "Default", "strMiles": "1", "UseXMiles": true, "UseGeolocation": true,
@@ -566,14 +591,48 @@ const app = {
         this.filterListDebounced = this.debounce(() => this.renderList(), 300);
         this.renderList();
         this.renderTemplates();
-        // V4 FIX: ESC key to clear selection
+        
+        // V4.3 IMPROVEMENT: Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
+            // ESC - Clear selection
             if (e.key === 'Escape') {
                 this.selectedIds.clear();
                 this.lastClickedId = null;
                 this.renderList();
             }
+            // Ctrl+Z - Undo delete
+            if (e.ctrlKey && e.key === 'z' && !e.target.matches('input, textarea')) {
+                e.preventDefault();
+                this.undoDelete();
+            }
+            // Ctrl+S - Save/Export (when not in modal)
+            if (e.ctrlKey && e.key === 's' && !e.target.matches('input, textarea')) {
+                e.preventDefault();
+                this.downloadJSON();
+            }
+            // Ctrl+N - New campaign
+            if (e.ctrlKey && e.key === 'n' && !e.target.matches('input, textarea')) {
+                e.preventDefault();
+                this.createNew();
+            }
+            // Delete - Delete selected campaigns (when not in input)
+            if (e.key === 'Delete' && !e.target.matches('input, textarea') && this.selectedIds.size > 0) {
+                e.preventDefault();
+                this.bulkDelete();
+            }
+            // Ctrl+F - Focus search
+            if (e.ctrlKey && e.key === 'f') {
+                e.preventDefault();
+                const searchInput = document.querySelector('input[placeholder="Search by name or ID..."]');
+                if (searchInput) searchInput.focus();
+            }
+            // Ctrl+/ - Show keyboard shortcuts
+            if (e.ctrlKey && (e.key === '/' || e.key === '?')) {
+                e.preventDefault();
+                app.showKeyboardShortcuts();
+            }
         });
+        
         window.onbeforeunload = () => this.campaigns.length > 0 ? "You have unsaved changes." : null;
     },
     
@@ -817,7 +876,7 @@ const app = {
         this.templates.push(newTpl);
         this.saveToStorage(); // V4 FIX #1: Auto-save templates
         this.renderTemplates();
-        alert(`✅ Template "${name}" saved! (Persists across reloads)`);
+        this.showToast(`✅ Template "${name}" saved!`, "success");
     },
 
     updateTemplateCampaignSelect() {
@@ -831,9 +890,9 @@ const app = {
         const campaignId = document.getElementById('template-source-campaign').value;
         const name = document.getElementById('template-name').value;
         const desc = document.getElementById('template-desc').value;
-        
+
         if (!campaignId || !name) {
-            alert("Please select a campaign and provide a template name");
+            this.showToast("Please select a campaign and provide a template name", "warning");
             return;
         }
         
@@ -868,7 +927,7 @@ const app = {
         });
 
         this.saveToStorage(); // V4 FIX #1: Auto-save templates
-        alert(`✅ Template "${name}" created from campaign!`);
+        this.showToast(`✅ Template "${name}" created!`, "success");
         document.getElementById('template-name').value = '';
         document.getElementById('template-desc').value = '';
         this.renderTemplates();
@@ -941,28 +1000,76 @@ const app = {
         this.renderList();
     },
 
+    // V4.3 NEW: Show keyboard shortcuts modal
+    showKeyboardShortcuts() {
+        const modal = document.getElementById('modal-container');
+        modal.innerHTML = `
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                ⌨️ Keyboard Shortcuts
+                <button class="btn btn-secondary btn-sm" onclick="app.hideModal()">✕ Close</button>
+            </div>
+            <div class="modal-body">
+                <div style="display:grid;gap:0.75rem">
+                    <div class="flex items-center justify-between" style="padding:0.5rem;background:rgba(0,0,0,0.2);border-radius:4px">
+                        <span>Clear selection</span>
+                        <kbd style="background:var(--bg-hover);padding:2px 6px;border-radius:3px;font-family:monospace">ESC</kbd>
+                    </div>
+                    <div class="flex items-center justify-between" style="padding:0.5rem;background:rgba(0,0,0,0.2);border-radius:4px">
+                        <span>Undo delete</span>
+                        <kbd style="background:var(--bg-hover);padding:2px 6px;border-radius:3px;font-family:monospace">Ctrl+Z</kbd>
+                    </div>
+                    <div class="flex items-center justify-between" style="padding:0.5rem;background:rgba(0,0,0,0.2);border-radius:4px">
+                        <span>Export JSON</span>
+                        <kbd style="background:var(--bg-hover);padding:2px 6px;border-radius:3px;font-family:monospace">Ctrl+S</kbd>
+                    </div>
+                    <div class="flex items-center justify-between" style="padding:0.5rem;background:rgba(0,0,0,0.2);border-radius:4px">
+                        <span>New campaign</span>
+                        <kbd style="background:var(--bg-hover);padding:2px 6px;border-radius:3px;font-family:monospace">Ctrl+N</kbd>
+                    </div>
+                    <div class="flex items-center justify-between" style="padding:0.5rem;background:rgba(0,0,0,0.2);border-radius:4px">
+                        <span>Delete selected</span>
+                        <kbd style="background:var(--bg-hover);padding:2px 6px;border-radius:3px;font-family:monospace">Delete</kbd>
+                    </div>
+                    <div class="flex items-center justify-between" style="padding:0.5rem;background:rgba(0,0,0,0.2);border-radius:4px">
+                        <span>Focus search</span>
+                        <kbd style="background:var(--bg-hover);padding:2px 6px;border-radius:3px;font-family:monospace">Ctrl+F</kbd>
+                    </div>
+                    <div class="flex items-center justify-between" style="padding:0.5rem;background:rgba(0,0,0,0.2);border-radius:4px">
+                        <span>Show this help</span>
+                        <kbd style="background:var(--bg-hover);padding:2px 6px;border-radius:3px;font-family:monospace">Ctrl+/</kbd>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.hideModal()">Close</button>
+            </div>
+        </div>`;
+        modal.classList.remove('hidden');
+    },
+
     // V4 FIX #3: Undo last delete
     undoDelete() {
         if (!this.lastDeleted) {
-            alert("Nothing to undo");
+            this.showToast("Nothing to undo", "warning");
             return;
         }
-        
+
         // Check if deletion is too old (5 minutes)
         if (Date.now() - this.lastDeleted.timestamp > 5 * 60 * 1000) {
-            alert("Undo expired (5 minute limit)");
+            this.showToast("Undo expired (5 minute limit)", "warning");
             this.lastDeleted = null;
             return;
         }
-        
+
         // Restore the campaign
         this.campaigns.unshift(this.lastDeleted.campaign);
         this.saveToStorage();
         this.renderList();
-        
+
         const name = this.lastDeleted.campaign.ProjectName;
         this.lastDeleted = null;
-        alert(`✅ Restored: ${name}`);
+        this.showToast(`✅ Restored: ${name}`, "success");
     },
 
     // --- RENDER LIST ---
@@ -1021,16 +1128,74 @@ const app = {
                 <td class="text-xs text-muted">${progress}</td>
                 <td class="text-xs">${nextRunStr}</td>
                 <td class="col-actions">
-                    <button class="btn btn-primary btn-sm" onclick="app.editCampaign('${safeEditorId}')" title="Edit">✏️</button>
-                    <button class="btn btn-secondary btn-sm" onclick="app.cloneCampaign('${safeEditorId}')" title="Clone">📋</button>
-                    <button class="btn btn-danger btn-sm" onclick="app.deleteCampaign('${safeEditorId}')" title="Delete">✕</button>
+                    <button class="btn btn-primary btn-sm" onclick="app.editCampaign('${safeEditorId}')" title="Edit" aria-label="Edit campaign ${safeName}">✏️</button>
+                    <button class="btn btn-secondary btn-sm" onclick="app.cloneCampaign('${safeEditorId}')" title="Clone" aria-label="Clone campaign ${safeName}">📋</button>
+                    <button class="btn btn-danger btn-sm" onclick="app.deleteCampaign('${safeEditorId}')" title="Delete" aria-label="Delete campaign ${safeName}">✕</button>
                 </td>
             </tr>`;
         }).join('');
     },
 
     escHtml(str) {
-        return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    },
+
+    // V4.3 NEW: Toast Notifications
+    showToast(message, type = 'info', duration = 4000) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+
+        const icons = {
+            success: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+            error: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+            warning: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 2.97h16.94a2 2 0 0 0 1.71-2.97L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+            info: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+        };
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <div class="toast-icon">${icons[type] || icons.info}</div>
+            <div class="toast-content">${this.escHtml(message)}</div>
+            <button class="toast-close" onclick="this.parentElement.remove()">✕</button>
+        `;
+
+        container.appendChild(toast);
+
+        // Auto-remove after duration
+        if (duration > 0) {
+            setTimeout(() => {
+                toast.classList.add('hiding');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+    },
+
+    showLoading(message = 'Loading...') {
+        let overlay = document.querySelector('.loading-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'loading-overlay';
+            overlay.innerHTML = `
+                <div style="text-align:center">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">${this.escHtml(message)}</div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+        return overlay;
+    },
+
+    hideLoading() {
+        const overlay = document.querySelector('.loading-overlay');
+        if (overlay) overlay.remove();
     },
 
     // #3: filterList reads from DOM — val param ignored for backward compat
@@ -2031,7 +2196,15 @@ const app = {
         if (vmin !== null && vmax !== null && vmin > vmax) errors.push('Visit Max must be greater than or equal to Visit Min');
         if (daily !== null && visits !== null && daily > visits) errors.push('Daily limit cannot exceed total visits');
 
-        if (errors.length > 0) return alert(errors.join('\n'));
+        if (errors.length > 0) {
+            this.showToast(errors[0], "error", 5000);
+            return;
+        }
+
+        // Show loading indicator for large generations
+        if (variations * types.length > 5) {
+            this.showLoading('Generating campaigns...');
+        }
 
         let count = 0;
         const generatedCampaigns = [];
@@ -2110,7 +2283,8 @@ const app = {
         this.ensureCampaignIds(this.campaigns);
         this.saveToStorage();
 
-        alert(`Generated ${count} campaigns successfully!`);
+        this.hideLoading();
+        this.showToast(`🚀 Generated ${count} campaigns!`, "success");
         this.switchTab('list');
     },
 
@@ -2128,29 +2302,46 @@ const app = {
 
     // --- FILE I/O ---
     
-    // V4.2 IMPROVEMENT: Sanitize campaign data on import (security)
-    sanitizeCampaign(c) {
+    // V4.3 IMPROVEMENT: Sanitize campaign data on import (security)
+    sanitizeCampaign(c, depth = 0) {
+        // Prevent deep nesting attacks
+        if (depth > 5) return null;
         if (!c || typeof c !== 'object' || Array.isArray(c)) return null;
 
-        const safe = {};
+        const safe = Object.create(null); // Prevent prototype pollution
         const stringFields = ['ProjectName', 'Type', 'TargetUrl', 'TargetName', 'TargetSearchEngine',
             'strGoogleSearchType', 'CreateTime', 'Filename', 'strStartTime', 'strEndTime',
             'DeviceType', 'strNextDevice', 'AuthorId', 'Threads', 'CustomLanguage', 'id'];
         const arrayFields = ['lstUsedProxies', 'lstCustomProxies', 'lstCustomGeolocations',
             'lstKeywords', 'lstSites', 'lstInternalIgnoreLinks', 'Keywords', 'UsedKeywords'];
 
-        const isBlockedKey = key => key === '__proto__' || key === 'constructor' || key === 'prototype' || key === this.EDITOR_ID_FIELD;
+        // Block dangerous keys including nested patterns
+        const isBlockedKey = key => {
+            if (typeof key !== 'string') return true;
+            const blocked = ['__proto__', 'constructor', 'prototype', '__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__'];
+            return blocked.includes(key) || key === this.EDITOR_ID_FIELD || key.startsWith('_');
+        };
 
         // Copy all fields
         for (const key of Object.keys(c)) {
             if (!Object.prototype.hasOwnProperty.call(c, key)) continue;
             if (isBlockedKey(key)) continue;
+            
+            // Skip extremely long strings (DoS prevention)
+            const val = c[key];
+            if (typeof val === 'string' && val.length > 10000) continue;
+            
             if (stringFields.includes(key)) {
-                safe[key] = this.escHtml(String(c[key] || ''));
+                safe[key] = this.escHtml(String(val || ''));
             } else if (arrayFields.includes(key)) {
-                safe[key] = Array.isArray(c[key]) ? c[key].map(item => this.escHtml(String(item || ''))) : [];
+                safe[key] = Array.isArray(val) 
+                    ? val.slice(0, 1000).map(item => this.escHtml(String(item || ''))).slice(0, 500) 
+                    : [];
+            } else if (typeof val === 'object' && val !== null) {
+                // Skip nested objects (not expected in campaign data)
+                continue;
             } else {
-                safe[key] = c[key]; // Keep numbers, booleans as-is
+                safe[key] = val; // Keep numbers, booleans as-is
             }
         }
         return safe;
@@ -2159,6 +2350,8 @@ const app = {
     handleFileUpload(input) {
         const file = input.files[0];
         if (!file) return;
+        
+        this.showLoading('Loading file...');
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
@@ -2177,13 +2370,20 @@ const app = {
                     this.saveToStorage(); // Auto-save imported data
                     this.renderList();
                     this.switchTab('list');
-                    alert(`Loaded ${sanitized.length} campaigns (${mode === 'merge' ? 'merged' : 'replaced'})`);
+                    this.hideLoading();
+                    this.showToast(`✅ Loaded ${sanitized.length} campaigns (${mode === 'merge' ? 'merged' : 'replaced'})`, "success", 3000);
                 } else {
-                    alert("Invalid file: Root must be a JSON array");
+                    this.hideLoading();
+                    this.showToast("Invalid file: Root must be a JSON array", "error");
                 }
             } catch (err) {
-                alert("Error parsing JSON: " + err.message);
+                this.hideLoading();
+                this.showToast("Error parsing JSON: " + err.message, "error", 6000);
             }
+        };
+        reader.onerror = () => {
+            this.hideLoading();
+            this.showToast("Error reading file", "error");
         };
         reader.readAsText(file);
     },
@@ -2206,11 +2406,12 @@ const app = {
                     this.saveToStorage(); // Auto-save imported data
                     this.renderList();
                     this.switchTab('list');
+                    this.showToast(`✅ Loaded ${sanitized.length} campaigns`, "success", 3000);
             } else {
-                alert("Root must be a JSON array");
+                this.showToast("Root must be a JSON array", "error");
             }
         } catch (err) {
-            alert("Error: " + err.message);
+            this.showToast("Error: " + err.message, "error", 6000);
         }
     },
 
