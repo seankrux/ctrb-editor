@@ -1162,6 +1162,12 @@ Respond in a helpful, concise manner. Use markdown formatting. Reference specifi
                 model.includes('gpt-4o') || 
                 model.includes('gpt-4.5');
             
+            console.log('🤖 AI Request:', { 
+                model, 
+                usesMaxCompletionTokens: requiresMaxCompletionTokens,
+                endpoint 
+            });
+
             if (requiresMaxCompletionTokens) {
                 requestBody.max_completion_tokens = 1000;
                 // o1 models don't support temperature or stream
@@ -1183,8 +1189,19 @@ Respond in a helpful, concise manner. Use markdown formatting. Reference specifi
             });
 
             if (!response.ok) {
-                const error = await response.text();
-                throw new Error(`API Error: ${response.status} - ${error}`);
+                const errorText = await response.text();
+                let errorMsg = `API Error: ${response.status} - ${errorText}`;
+                
+                // Provide helpful fix suggestions
+                if (errorText.includes('max_tokens')) {
+                    errorMsg = `Model '${model}' requires max_completion_tokens instead of max_tokens.\n\nTry selecting a different model or refresh the page (Cmd+Shift+R).`;
+                } else if (response.status === 401) {
+                    errorMsg = 'Invalid API key. Check your key in ⚙️ Settings.';
+                } else if (response.status === 429) {
+                    errorMsg = 'Rate limit exceeded. Please wait a moment.';
+                }
+                
+                throw new Error(errorMsg);
             }
 
             const data = await response.json();
