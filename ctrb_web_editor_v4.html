@@ -704,7 +704,7 @@ const app = {
         { text: "Pause selected", action: "pause_selected" },
         { text: "Resume selected", action: "resume_selected" },
         { text: "Delete selected", action: "delete-selected" },
-        { text: "Export all", action: "export-all" },
+        { text: "Export selected", action: "export-selected" },
         { text: "Show stats", action: "stats" },
         { text: "Help", action: "help" }
     ],
@@ -830,6 +830,7 @@ const app = {
 
         // Command parsing
         try {
+            // Create campaigns
             if (lower.includes('create') && (lower.includes('gmap') || lower.includes('google map'))) {
                 response = this.agentCreateCampaign('GMap');
             } else if (lower.includes('create') && (lower.includes('gsearch') || lower.includes('google search'))) {
@@ -838,17 +839,50 @@ const app = {
                 response = this.agentCreateCampaign('DirectVisit');
             } else if (lower.includes('create') && lower.includes('ref')) {
                 response = this.agentCreateCampaign('RefDVisit');
-            } else if (lower.includes('pause') && lower.includes('select')) {
+            }
+            // Pause/Resume/Delete selected
+            else if (lower.includes('pause') && lower.includes('select')) {
                 response = this.agentPauseSelected();
             } else if (lower.includes('resume') && lower.includes('select')) {
                 response = this.agentResumeSelected();
             } else if (lower.includes('delete') && lower.includes('select')) {
                 response = this.agentDeleteSelected();
+            }
+            // Export
+            else if (lower.includes('export') && lower.includes('select')) {
+                response = this.agentExportSelected();
             } else if (lower.includes('export') && lower.includes('all')) {
                 response = this.agentExportAll();
-            } else if (lower.includes('stat') || lower.includes('how many') || lower.includes('count')) {
+            }
+            // Stats and search
+            else if (lower.includes('stat') || lower.includes('how many') || lower.includes('count')) {
                 response = this.agentStats();
-            } else if (lower.includes('help') || lower.includes('what can')) {
+            } else if (lower.includes('search') || lower.includes('find') || lower.includes('look for')) {
+                const query = message.replace(/search|find|look for|for|in/gi, '').trim();
+                response = this.agentSearchCampaigns(query);
+            }
+            // Bulk operations with filters
+            else if (lower.includes('pause all') || lower.includes('pause everything')) {
+                response = this.agentBulkPauseAll();
+            } else if (lower.includes('resume all') || lower.includes('resume everything')) {
+                response = this.agentBulkResumeAll();
+            } else if (lower.includes('delete all') || lower.includes('delete everything')) {
+                response = this.agentBulkDeleteAll();
+            } else if (lower.includes('pause') && (lower.includes('gmap') || lower.includes('gsearch') || lower.includes('type'))) {
+                const type = this.extractCampaignType(lower);
+                response = this.agentBulkByType(type, 'pause');
+            } else if (lower.includes('resume') && (lower.includes('gmap') || lower.includes('gsearch') || lower.includes('type'))) {
+                const type = this.extractCampaignType(lower);
+                response = this.agentBulkByType(type, 'resume');
+            }
+            // Edit campaign by name
+            else if (lower.includes('edit') && (lower.includes('campaign') || lower.includes('name') || lower.includes('set'))) {
+                response = this.agentEditByName(message);
+            } else if (lower.includes('rename') || lower.includes('change name')) {
+                response = this.agentEditByName(message);
+            }
+            // Help and greetings
+            else if (lower.includes('help') || lower.includes('what can')) {
                 response = this.agentHelp();
             } else if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey')) {
                 response = "👋 Hello! How can I help you with your campaigns today?";
@@ -977,11 +1011,220 @@ const app = {
             `**Manage Selected:**\n` +
             `• "Pause selected"\n` +
             `• "Resume selected"\n` +
-            `• "Delete selected"\n\n` +
-            `**Other:**\n` +
-            `• "Export all" - Download JSON\n` +
+            `• "Delete selected"\n` +
+            `• "Export selected"\n\n` +
+            `**Bulk Operations:**\n` +
+            `• "Pause all" - Pause everything\n` +
+            `• "Resume all" - Resume everything\n` +
+            `• "Pause GMap campaigns" - By type\n` +
+            `• "Resume GSearch campaigns"\n\n` +
+            `**Edit Campaigns:**\n` +
+            `• "Edit campaign 'My Campaign' set DailyLimit to 5"\n` +
+            `• "Rename 'Old Name' to 'New Name'"\n\n` +
+            `**Search & Stats:**\n` +
+            `• "Search for 'plumber'" - Find campaigns\n` +
             `• "Show stats" - View statistics\n` +
+            `• "Export all" - Download JSON\n` +
             `• "Help" - Show this message`;
+    },
+
+    // V4.4 NEW: Export selected campaigns
+    agentExportSelected() {
+        if (this.selectedIds.size === 0) {
+            return "⚠️ No campaigns selected. Select campaigns first, then ask me to export them.";
+        }
+        this.exportSelected();
+        return `📥 Exporting ${this.selectedIds.size} selected campaign${this.selectedIds.size > 1 ? 's' : ''}...`;
+    },
+
+    // V4.4 NEW: Search campaigns
+    agentSearchCampaigns(query) {
+        if (!query || query.length < 2) {
+            return "⚠️ Please provide a search term (at least 2 characters). Example: \"Search for plumber\"";
+        }
+
+        const results = this.campaigns.filter(c =>
+            c.ProjectName.toLowerCase().includes(query.toLowerCase()) ||
+            c.Type.toLowerCase().includes(query.toLowerCase()) ||
+            c.id.includes(query)
+        );
+
+        if (results.length === 0) {
+            return `🔍 No campaigns found matching "${query}".`;
+        }
+
+        const preview = results.slice(0, 5).map(c =>
+            `• ${c.ProjectName} (${c.Type}) - ${c.Checked ? '● Active' : '○ Paused'}`
+        ).join('\n');
+
+        const more = results.length > 5 ? `\n...and ${results.length - 5} more.` : '';
+
+        return `🔍 Found ${results.length} campaign${results.length > 1 ? 's' : ''}:\n\n${preview}${more}`;
+    },
+
+    // V4.4 NEW: Bulk pause all
+    agentBulkPauseAll() {
+        if (this.campaigns.length === 0) {
+            return "⚠️ No campaigns to pause.";
+        }
+
+        let count = 0;
+        this.campaigns.forEach(c => {
+            if (c.Checked) {
+                c.Checked = false;
+                count++;
+            }
+        });
+        this.saveToStorage();
+        this.renderList();
+
+        return `⏸️ Paused ${count} campaign${count > 1 ? 's' : ''}.`;
+    },
+
+    // V4.4 NEW: Bulk resume all
+    agentBulkResumeAll() {
+        if (this.campaigns.length === 0) {
+            return "⚠️ No campaigns to resume.";
+        }
+
+        let count = 0;
+        this.campaigns.forEach(c => {
+            if (!c.Checked) {
+                c.Checked = true;
+                count++;
+            }
+        });
+        this.saveToStorage();
+        this.renderList();
+
+        return `▶️ Resumed ${count} campaign${count > 1 ? 's' : ''}.`;
+    },
+
+    // V4.4 NEW: Bulk delete all (with confirmation warning)
+    agentBulkDeleteAll() {
+        if (this.campaigns.length === 0) {
+            return "⚠️ No campaigns to delete.";
+        }
+
+        // Store for undo
+        if (this.campaigns.length > 0) {
+            this.lastDeleted = { campaign: this.campaigns[0], timestamp: Date.now(), bulk: this.campaigns.length };
+        }
+
+        const count = this.campaigns.length;
+        this.campaigns = [];
+        this.selectedIds.clear();
+        this.saveToStorage();
+        this.renderList();
+
+        return `🗑️ Deleted ALL ${count} campaigns. Press Ctrl+Z to restore the first one.`;
+    },
+
+    // V4.4 NEW: Extract campaign type from message
+    extractCampaignType(lower) {
+        if (lower.includes('gmap') || lower.includes('google map')) return 'GMap';
+        if (lower.includes('gsearch') || lower.includes('google search')) return 'GSearch';
+        if (lower.includes('direct')) return 'DirectVisit';
+        if (lower.includes('ref')) return 'RefDVisit';
+        if (lower.includes('gsearchref')) return 'GSearchRef';
+        return null;
+    },
+
+    // V4.4 NEW: Bulk operations by type
+    agentBulkByType(type, action) {
+        if (!type) {
+            return "⚠️ Please specify a campaign type (GMap, GSearch, DirectVisit, RefDVisit).";
+        }
+
+        const matching = this.campaigns.filter(c => c.Type === type);
+        if (matching.length === 0) {
+            return `⚠️ No ${type} campaigns found.`;
+        }
+
+        let count = 0;
+        matching.forEach(c => {
+            if (action === 'pause' && c.Checked) {
+                c.Checked = false;
+                count++;
+            } else if (action === 'resume' && !c.Checked) {
+                c.Checked = true;
+                count++;
+            }
+        });
+
+        if (count === 0) {
+            return `ℹ️ All ${type} campaigns are already ${action === 'pause' ? 'paused' : 'active'}.`;
+        }
+
+        this.saveToStorage();
+        this.renderList();
+
+        const actionWord = action === 'pause' ? 'Paused' : 'Resumed';
+        return `${actionWord === 'Paused' ? '⏸️' : '▶️'} ${actionWord} ${count} ${type} campaign${count > 1 ? 's' : ''}.`;
+    },
+
+    // V4.4 NEW: Edit campaign by name
+    agentEditByName(message) {
+        const lower = message.toLowerCase();
+
+        // Try to extract campaign name and field/value
+        // Pattern: "edit campaign 'Name' set Field to Value"
+        // Pattern: "rename 'Old' to 'New'"
+
+        // Handle rename
+        const renameMatch = lower.match(/rename\s*['"]?(.+?)['"]?\s*to\s*['"]?(.+?)['"]?/);
+        if (renameMatch) {
+            const oldName = renameMatch[1].trim();
+            const newName = renameMatch[2].trim();
+
+            const campaign = this.campaigns.find(c =>
+                c.ProjectName.toLowerCase().includes(oldName.toLowerCase())
+            );
+
+            if (!campaign) {
+                return `⚠️ No campaign found matching "${oldName}".`;
+            }
+
+            campaign.ProjectName = newName;
+            this.saveToStorage();
+            this.renderList();
+
+            return `✅ Renamed "${oldName}" to "${newName}".`;
+        }
+
+        // Handle field edit
+        const editMatch = lower.match(/(?:edit|set)\s*(?:campaign\s*)?['"]?(.+?)['"]?\s*(?:set\s*)?(.+?)\s*to\s*(.+)/);
+        if (editMatch) {
+            const campaignName = editMatch[1].trim();
+            const field = editMatch[2].trim();
+            const value = editMatch[3].trim().replace(/['"]/g, '');
+
+            const campaign = this.campaigns.find(c =>
+                c.ProjectName.toLowerCase().includes(campaignName.toLowerCase())
+            );
+
+            if (!campaign) {
+                return `⚠️ No campaign found matching "${campaignName}".`;
+            }
+
+            // Find the actual field name (case-insensitive)
+            const actualField = Object.keys(campaign).find(k =>
+                k.toLowerCase() === field.toLowerCase()
+            );
+
+            if (!actualField) {
+                return `⚠️ Unknown field "${field}". Available fields: ProjectName, DailyLimit, numberOfVisits, strStartTime, strEndTime, DeviceType`;
+            }
+
+            // Update the field
+            campaign[actualField] = value;
+            this.saveToStorage();
+            this.renderList();
+
+            return `✅ Set ${field} to "${value}" for "${campaignName}".`;
+        }
+
+        return "⚠️ I couldn't understand that command. Try:\n• \"Rename 'Old Name' to 'New Name'\"\n• \"Edit campaign 'My Campaign' set DailyLimit to 5\"";
     },
 
     // V4 FIX #1: Load data from localStorage
