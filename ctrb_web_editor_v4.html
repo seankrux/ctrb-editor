@@ -519,7 +519,10 @@
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><path d="M9 12a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/><path d="M15 12a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/></svg>
                 Campaign Assistant
             </div>
-            <button class="chat-close" onclick="app.toggleChat()">✕</button>
+            <div style="display:flex;gap:6px">
+                <button class="chat-close" onclick="app.showAISettings()" title="AI Settings" style="width:24px;height:24px;font-size:14px">⚙️</button>
+                <button class="chat-close" onclick="app.toggleChat()">✕</button>
+            </div>
         </div>
         <div id="chat-messages" class="chat-messages"></div>
         <div id="chat-suggestions" class="chat-suggestions"></div>
@@ -714,6 +717,123 @@ const app = {
         { text: "Help", action: "help" }
     ],
 
+    // V4.5 AI Agent Configuration
+    aiConfig: {
+        apiKey: '',
+        apiEndpoint: 'https://api.openai.com/v1/chat/completions',
+        model: 'gpt-4o-mini',
+        useLocalAI: false,
+        localEndpoint: 'http://localhost:11434/v1/chat/completions',
+        localModel: 'llama3.1'
+    },
+
+    // V4.5 Load AI config from localStorage
+    loadAIConfig() {
+        try {
+            const saved = localStorage.getItem('ctrb_ai_config');
+            if (saved) {
+                this.aiConfig = { ...this.aiConfig, ...JSON.parse(saved) };
+            }
+        } catch (e) {
+            console.error('Failed to load AI config:', e);
+        }
+    },
+
+    // V4.5 Save AI config
+    saveAIConfig() {
+        try {
+            localStorage.setItem('ctrb_ai_config', JSON.stringify(this.aiConfig));
+        } catch (e) {
+            console.error('Failed to save AI config:', e);
+        }
+    },
+
+    // V4.5 Show AI Settings Modal
+    showAISettings() {
+        const modal = document.getElementById('modal-container');
+        modal.innerHTML = `
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                🤖 AI Agent Settings
+                <button class="btn btn-secondary btn-sm" onclick="app.hideModal()">✕ Close</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="field-label">AI Provider</label>
+                    <select id="ai-provider" onchange="app.toggleAIProvider()">
+                        <option value="openai" ${!this.aiConfig.useLocalAI ? 'selected' : ''}>OpenAI (Cloud)</option>
+                        <option value="local" ${this.aiConfig.useLocalAI ? 'selected' : ''}>Ollama (Local)</option>
+                    </select>
+                </div>
+
+                <div id="openai-settings" style="${this.aiConfig.useLocalAI ? 'display:none' : ''}">
+                    <div class="form-group">
+                        <label class="field-label">OpenAI API Key</label>
+                        <input type="password" id="ai-api-key" value="${this.aiConfig.apiKey}" placeholder="sk-...">
+                        <p class="text-xs text-muted" style="margin-top:4px">Get your key from <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--primary)">platform.openai.com</a></p>
+                    </div>
+                    <div class="form-group">
+                        <label class="field-label">Model</label>
+                        <select id="ai-model">
+                            <option value="gpt-4o-mini" ${this.aiConfig.model === 'gpt-4o-mini' ? 'selected' : ''}>GPT-4o Mini (Fast, Cheap)</option>
+                            <option value="gpt-4o" ${this.aiConfig.model === 'gpt-4o' ? 'selected' : ''}>GPT-4o (Smart)</option>
+                            <option value="gpt-4-turbo" ${this.aiConfig.model === 'gpt-4-turbo' ? 'selected' : ''}>GPT-4 Turbo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="local-settings" style="${!this.aiConfig.useLocalAI ? 'display:none' : ''}">
+                    <div class="form-group">
+                        <label class="field-label">Ollama Endpoint</label>
+                        <input type="text" id="ai-local-endpoint" value="${this.aiConfig.localEndpoint}" placeholder="http://localhost:11434/v1/chat/completions">
+                    </div>
+                    <div class="form-group">
+                        <label class="field-label">Local Model</label>
+                        <input type="text" id="ai-local-model" value="${this.aiConfig.localModel}" placeholder="llama3.1">
+                    </div>
+                </div>
+
+                <div class="alert alert-info" style="margin-top:1rem;font-size:12px">
+                    <strong>💡 Tips:</strong><br>
+                    • API keys are stored locally in your browser<br>
+                    • Local AI requires Ollama running (ollama serve)<br>
+                    • The AI agent can read and edit your campaign data
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.hideModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="app.saveAISettings()">💾 Save Settings</button>
+            </div>
+        </div>`;
+        modal.classList.remove('hidden');
+    },
+
+    toggleAIProvider() {
+        const provider = document.getElementById('ai-provider').value;
+        const useLocal = provider === 'local';
+        document.getElementById('openai-settings').style.display = useLocal ? 'none' : '';
+        document.getElementById('local-settings').style.display = useLocal ? '' : 'none';
+    },
+
+    saveAISettings() {
+        const provider = document.getElementById('ai-provider').value;
+        this.aiConfig.useLocalAI = provider === 'local';
+        this.aiConfig.apiKey = document.getElementById('ai-api-key')?.value || '';
+        this.aiConfig.model = document.getElementById('ai-model')?.value || 'gpt-4o-mini';
+        this.aiConfig.localEndpoint = document.getElementById('ai-local-endpoint')?.value || 'http://localhost:11434/v1/chat/completions';
+        this.aiConfig.localModel = document.getElementById('ai-local-model')?.value || 'llama3.1';
+
+        this.saveAIConfig();
+        this.hideModal();
+        this.showToast('✅ AI settings saved!', 'success');
+
+        // Initialize chat if not already
+        if (document.getElementById('chat-window')?.classList.contains('hidden')) {
+            this.toggleChat();
+        }
+        this.addChatMessage('system', `🤖 AI Agent configured! Using ${this.aiConfig.useLocalAI ? 'Local AI (' + this.aiConfig.localModel + ')' : this.aiConfig.model}. Ask me anything about your campaigns!`);
+    },
+
     toggleChat() {
         const bubble = document.getElementById('chat-bubble');
         const window = document.getElementById('chat-window');
@@ -734,11 +854,35 @@ const app = {
         const suggestions = document.getElementById('chat-suggestions');
         if (!messages) return;
 
+        // Load AI config
+        this.loadAIConfig();
+
         // Clear if empty
         if (messages.children.length === 0) {
-            this.addChatMessage('system', '👋 Hi! I\'m your Campaign Assistant. I can help you create, edit, and manage campaigns. Try one of these:');
-            this.renderChatSuggestions();
+            if (!this.aiConfig.apiKey && !this.aiConfig.useLocalAI) {
+                this.addChatMessage('system', '👋 Hi! I\'m your AI Campaign Assistant. Before we start, please configure your AI provider:');
+                this.addChatSettingsButton();
+            } else {
+                this.addChatMessage('system', `🤖 Hi! I'm your AI Campaign Assistant powered by ${this.aiConfig.useLocalAI ? this.aiConfig.localModel : this.aiConfig.model}. I can help you create, edit, and analyze campaigns. What would you like to do?`);
+                this.renderChatSuggestions();
+            }
         }
+    },
+
+    addChatSettingsButton() {
+        const messages = document.getElementById('chat-messages');
+        if (!messages) return;
+
+        const btnDiv = document.createElement('div');
+        btnDiv.style.cssText = 'padding:0.75rem;text-align:center';
+        btnDiv.innerHTML = `
+            <button class="btn btn-primary" onclick="app.showAISettings()" style="gap:8px">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Configure AI Agent
+            </button>
+        `;
+        messages.appendChild(btnDiv);
+        messages.scrollTop = messages.scrollHeight;
     },
 
     renderChatSuggestions() {
@@ -824,84 +968,185 @@ const app = {
         if (typing) typing.remove();
     },
 
+    // V4.5 NEW: Call AI API with campaign context
+    async callAIAPI(userMessage) {
+        const config = this.aiConfig;
+        
+        // Build campaign context
+        const campaignSummary = this.campaigns.map(c => ({
+            id: c.id,
+            name: c.ProjectName,
+            type: c.Type,
+            status: c.Checked ? 'Active' : 'Paused',
+            visits: c.numberOfVisits,
+            daily: c.DailyLimit,
+            done: c.doneVisits
+        }));
+
+        const systemPrompt = `You are an expert CTRBooster Campaign Assistant. You help users create, edit, analyze, and manage CTRBooster campaigns.
+
+CURRENT CAMPAIGNS (${this.campaigns.length} total):
+${JSON.stringify(campaignSummary, null, 2)}
+
+SELECTED CAMPAIGNS: ${this.selectedIds.size} campaigns selected
+
+CAMPAIGN TYPE INFO:
+- GSearch: Google Search organic traffic simulation
+- GMap: Google Maps engagement (needs Maps URLs, phone numbers)
+- RefDVisit: Referral direct visit (Maps → Website)
+- GSearchRef: Search + Referral combined
+- DirectVisit: Direct website traffic (no geo needed)
+
+KEY FIELDS:
+- ProjectName: Campaign name
+- Type: Campaign type
+- Checked: true=Active, false=Paused
+- numberOfVisits: Total visits target
+- DailyLimit: Daily visit limit
+- lstCustomGeolocations: Array of "lat:lon" points
+- lstSites: Target URLs (Maps, websites)
+- Keywords: Action keywords (tel:, URLs)
+- TimeOfVisitMin/Max: Visit duration range (seconds)
+
+When user asks to:
+- CREATE: Use agentCreateCampaign(type) function
+- EDIT: Use agentEditCampaign(name, field, value) function
+- PAUSE/RESUME: Use agentPauseCampaign(name) or agentResumeCampaign(name)
+- DELETE: Use agentDeleteCampaign(name) function
+- ANALYZE: Provide insights based on campaign data
+- CHECK: Validate campaigns and suggest improvements
+
+Respond in a helpful, concise manner. Use markdown formatting. Reference specific campaigns by name when relevant.`;
+
+        const messages = [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMessage }
+        ];
+
+        // Add conversation history (last 5 messages)
+        const recentHistory = this.chatHistory.slice(-5);
+        messages.push(...recentHistory);
+
+        try {
+            const endpoint = config.useLocalAI ? config.localEndpoint : config.apiEndpoint;
+            const model = config.useLocalAI ? config.localModel : config.model;
+            
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (!config.useLocalAI && config.apiKey) {
+                headers['Authorization'] = `Bearer ${config.apiKey}`;
+            }
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({
+                    model: model,
+                    messages: messages,
+                    temperature: 0.7,
+                    max_tokens: 1000,
+                    stream: false
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.text();
+                throw new Error(`API Error: ${response.status} - ${error}`);
+            }
+
+            const data = await response.json();
+            const aiResponse = data.choices?.[0]?.message?.content || 'No response from AI';
+
+            // Store in history
+            this.chatHistory.push({ role: 'user', content: userMessage });
+            this.chatHistory.push({ role: 'assistant', content: aiResponse });
+
+            // Check if AI wants to execute an action
+            const action = this.parseAIAction(aiResponse);
+            if (action) {
+                const result = await this.executeAIAction(action);
+                return `${aiResponse}\n\n**Action Result:** ${result}`;
+            }
+
+            return aiResponse;
+
+        } catch (error) {
+            console.error('AI API Error:', error);
+            throw error;
+        }
+    },
+
+    // V4.5 Parse AI response for actions
+    parseAIAction(response) {
+        // Look for action patterns in AI response
+        const patterns = [
+            /agentCreateCampaign\(['"](\w+)['"]\)/i,
+            /agentEditCampaign\(['"]([^'"]+)['"],\s*['"](\w+)['"],\s*['"]([^'"]+)['"]\)/i,
+            /agentPauseCampaign\(['"]([^'"]+)['"]\)/i,
+            /agentResumeCampaign\(['"]([^'"]+)['"]\)/i,
+            /agentDeleteCampaign\(['"]([^'"]+)['"]\)/i,
+        ];
+
+        for (const pattern of patterns) {
+            const match = response.match(pattern);
+            if (match) {
+                return { type: pattern.source, args: match.slice(1) };
+            }
+        }
+        return null;
+    },
+
+    // V4.5 Execute AI action
+    async executeAIAction(action) {
+        try {
+            if (action.type.includes('agentCreateCampaign')) {
+                return this.agentCreateCampaign(action.args[0]);
+            } else if (action.type.includes('agentEditCampaign')) {
+                return this.agentEditCampaignByName(action.args[0], action.args[1], action.args[2]);
+            } else if (action.type.includes('agentPauseCampaign')) {
+                return this.agentPauseCampaign(action.args[0]);
+            } else if (action.type.includes('agentResumeCampaign')) {
+                return this.agentResumeCampaign(action.args[0]);
+            } else if (action.type.includes('agentDeleteCampaign')) {
+                return this.agentDeleteCampaign(action.args[0]);
+            }
+        } catch (e) {
+            return `Error executing action: ${e.message}`;
+        }
+        return 'Unknown action';
+    },
+
     async processChatMessage(message) {
         this.showChatTyping();
 
-        // Simulate thinking delay
-        await new Promise(r => setTimeout(r, 500 + Math.random() * 500));
-
         const lower = message.toLowerCase();
-        let response = '';
 
-        // Command parsing
-        try {
-            // Create campaigns
-            if (lower.includes('create') && (lower.includes('gmap') || lower.includes('google map'))) {
-                response = this.agentCreateCampaign('GMap');
-            } else if (lower.includes('create') && (lower.includes('gsearch') || lower.includes('google search'))) {
-                response = this.agentCreateCampaign('GSearch');
-            } else if (lower.includes('create') && lower.includes('direct')) {
-                response = this.agentCreateCampaign('DirectVisit');
-            } else if (lower.includes('create') && lower.includes('ref')) {
-                response = this.agentCreateCampaign('RefDVisit');
-            }
-            // Pause/Resume/Delete selected
-            else if (lower.includes('pause') && lower.includes('select')) {
-                response = this.agentPauseSelected();
-            } else if (lower.includes('resume') && lower.includes('select')) {
-                response = this.agentResumeSelected();
-            } else if (lower.includes('delete') && lower.includes('select')) {
-                response = this.agentDeleteSelected();
-            }
-            // Export
-            else if (lower.includes('export') && lower.includes('select')) {
-                response = this.agentExportSelected();
-            } else if (lower.includes('export') && lower.includes('all')) {
-                response = this.agentExportAll();
-            }
-            // Stats and search
-            else if (lower.includes('stat') || lower.includes('how many') || lower.includes('count')) {
-                response = this.agentStats();
-            } else if (lower.includes('search') || lower.includes('find') || lower.includes('look for')) {
-                const query = message.replace(/search|find|look for|for|in/gi, '').trim();
-                response = this.agentSearchCampaigns(query);
-            }
-            // Bulk operations with filters
-            else if (lower.includes('pause all') || lower.includes('pause everything')) {
-                response = this.agentBulkPauseAll();
-            } else if (lower.includes('resume all') || lower.includes('resume everything')) {
-                response = this.agentBulkResumeAll();
-            } else if (lower.includes('delete all') || lower.includes('delete everything')) {
-                response = this.agentBulkDeleteAll();
-            } else if (lower.includes('pause') && (lower.includes('gmap') || lower.includes('gsearch') || lower.includes('type'))) {
-                const type = this.extractCampaignType(lower);
-                response = this.agentBulkByType(type, 'pause');
-            } else if (lower.includes('resume') && (lower.includes('gmap') || lower.includes('gsearch') || lower.includes('type'))) {
-                const type = this.extractCampaignType(lower);
-                response = this.agentBulkByType(type, 'resume');
-            }
-            // Edit campaign by name
-            else if (lower.includes('edit') && (lower.includes('campaign') || lower.includes('name') || lower.includes('set'))) {
-                response = this.agentEditByName(message);
-            } else if (lower.includes('rename') || lower.includes('change name')) {
-                response = this.agentEditByName(message);
-            }
-            // Help and greetings
-            else if (lower.includes('help') || lower.includes('what can')) {
-                response = this.agentHelp();
-            } else if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey')) {
-                response = "👋 Hello! How can I help you with your campaigns today?";
-            } else if (lower.includes('thank')) {
-                response = "You're welcome! Let me know if you need anything else.";
-            } else {
-                response = this.agentHelp();
-            }
-        } catch (e) {
-            response = `❌ Error: ${e.message}`;
+        // Check if AI is configured
+        if (!this.aiConfig.apiKey && !this.aiConfig.useLocalAI) {
+            this.hideChatTyping();
+            this.addChatMessage('system', '⚙️ Please configure your AI provider first. Click the ⚙️ Settings button in the chat header.');
+            this.addChatSettingsButton();
+            return;
         }
 
-        this.hideChatTyping();
-        this.addChatMessage('system', response);
+        // Fall back to simple commands for basic actions (faster)
+        if (lower === 'help' || lower.includes('hello') || lower.includes('hi ') || lower.includes('hey ')) {
+            this.hideChatTyping();
+            this.addChatMessage('system', '👋 Hello! How can I help you with your campaigns today?');
+            return;
+        }
+
+        try {
+            // Call AI API
+            const response = await this.callAIAPI(message);
+            this.hideChatTyping();
+            this.addChatMessage('system', response);
+        } catch (error) {
+            this.hideChatTyping();
+            this.addChatMessage('system', `❌ AI Error: ${error.message}\n\nPlease check your API key in settings (⚙️ button).`);
+        }
     },
 
     agentCreateCampaign(type) {
@@ -1065,6 +1310,51 @@ const app = {
         const more = results.length > 5 ? `\n...and ${results.length - 5} more.` : '';
 
         return `🔍 Found ${results.length} campaign${results.length > 1 ? 's' : ''}:\n\n${preview}${more}`;
+    },
+
+    // V4.5 NEW: AI-callable campaign functions
+    agentPauseCampaign(name) {
+        const campaign = this.campaigns.find(c => c.ProjectName.toLowerCase().includes(name.toLowerCase()));
+        if (!campaign) return `⚠️ No campaign found matching "${name}".`;
+        campaign.Checked = false;
+        this.saveToStorage();
+        this.renderList();
+        return `⏸️ Paused "${campaign.ProjectName}".`;
+    },
+
+    agentResumeCampaign(name) {
+        const campaign = this.campaigns.find(c => c.ProjectName.toLowerCase().includes(name.toLowerCase()));
+        if (!campaign) return `⚠️ No campaign found matching "${name}".`;
+        campaign.Checked = true;
+        this.saveToStorage();
+        this.renderList();
+        return `▶️ Resumed "${campaign.ProjectName}".`;
+    },
+
+    agentDeleteCampaign(name) {
+        const campaign = this.campaigns.find(c => c.ProjectName.toLowerCase().includes(name.toLowerCase()));
+        if (!campaign) return `⚠️ No campaign found matching "${name}".`;
+        
+        this.lastDeleted = { campaign, timestamp: Date.now() };
+        this.campaigns = this.campaigns.filter(c => c[this.EDITOR_ID_FIELD] !== campaign[this.EDITOR_ID_FIELD]);
+        this.selectedIds.delete(campaign[this.EDITOR_ID_FIELD]);
+        this.saveToStorage();
+        this.renderList();
+        return `🗑️ Deleted "${name}". Press Ctrl+Z to undo.`;
+    },
+
+    agentEditCampaignByName(name, field, value) {
+        const campaign = this.campaigns.find(c => c.ProjectName.toLowerCase().includes(name.toLowerCase()));
+        if (!campaign) return `⚠️ No campaign found matching "${name}".`;
+        
+        // Find actual field name (case-insensitive)
+        const actualField = Object.keys(campaign).find(k => k.toLowerCase() === field.toLowerCase());
+        if (!actualField) return `⚠️ Unknown field "${field}".`;
+        
+        campaign[actualField] = value;
+        this.saveToStorage();
+        this.renderList();
+        return `✅ Set ${field} to "${value}" for "${campaign.ProjectName}".`;
     },
 
     // V4.4 NEW: Bulk pause all
