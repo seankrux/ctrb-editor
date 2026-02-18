@@ -1157,10 +1157,14 @@ Respond in a helpful, concise manner. Use markdown formatting. Reference specifi
                 messages: messages
             };
 
-            // Check if model requires max_completion_tokens (o1 and newer GPT-4o models)
-            const requiresMaxCompletionTokens = model.startsWith('o1') || 
-                model.includes('gpt-4o') || 
-                model.includes('gpt-4.5');
+            // Check if model requires max_completion_tokens
+            // Includes: o1, gpt-4o, gpt-4.5, gpt-5, and any future gpt-4+ models
+            const requiresMaxCompletionTokens = 
+                model.startsWith('o1') ||                      // o1-mini, o1-preview
+                model.includes('gpt-4o') ||                    // gpt-4o, gpt-4o-mini
+                model.includes('gpt-4.') ||                    // gpt-4.5, gpt-5.x, etc
+                /gpt-[5-9]/.test(model) ||                     // gpt-5, gpt-6, etc
+                model.includes('-chat-latest');                // gpt-5.2-chat-latest
             
             console.log('🤖 AI Request:', { 
                 model, 
