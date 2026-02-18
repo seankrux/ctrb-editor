@@ -557,6 +557,7 @@ const app = {
         CAMPAIGNS: 'ctrb_v4_campaigns',
         TEMPLATES: 'ctrb_v4_templates'
     },
+    EDITOR_ID_FIELD: '__editorId',
 
     init() {
         // Load from localStorage
@@ -565,6 +566,14 @@ const app = {
         this.filterListDebounced = this.debounce(() => this.renderList(), 300);
         this.renderList();
         this.renderTemplates();
+        // V4 FIX: ESC key to clear selection
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.selectedIds.clear();
+                this.lastClickedId = null;
+                this.renderList();
+            }
+        });
         window.onbeforeunload = () => this.campaigns.length > 0 ? "You have unsaved changes." : null;
     },
     
@@ -574,7 +583,14 @@ const app = {
             // Load campaigns
             const savedCampaigns = localStorage.getItem(this.STORAGE_KEYS.CAMPAIGNS);
             if (savedCampaigns) {
-                this.campaigns = JSON.parse(savedCampaigns);
+                const parsedCampaigns = JSON.parse(savedCampaigns);
+                if (!Array.isArray(parsedCampaigns)) {
+                    throw new Error('Campaign backup must be an array');
+                }
+                this.campaigns = parsedCampaigns
+                    .map(c => this.sanitizeCampaign(c))
+                    .filter(Boolean);
+                this.ensureCampaignIds(this.campaigns);
                 console.log(`📦 Loaded ${this.campaigns.length} campaigns from storage`);
             }
             
@@ -594,7 +610,7 @@ const app = {
     // V4 FIX #1: Save data to localStorage
     saveToStorage() {
         try {
-            localStorage.setItem(this.STORAGE_KEYS.CAMPAIGNS, JSON.stringify(this.campaigns));
+            localStorage.setItem(this.STORAGE_KEYS.CAMPAIGNS, JSON.stringify(this.stripEditorMetadata(this.campaigns)));
             
             // Only save custom templates (not defaults)
             const customTemplates = this.templates.slice(5); // First 5 are defaults
@@ -617,6 +633,58 @@ const app = {
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
         };
+    },
+
+    // Internal editor-only campaign IDs (never written to exported JSON)
+    normalizeEditorId(value) {
+        return String(value || '').trim();
+    },
+
+    generateEditorId() {
+        const base = Date.now().toString(36);
+        const rand = Math.random().toString(36).slice(2, 8);
+        return `e-${base}-${rand}`;
+    },
+
+    ensureCampaignIds(list = this.campaigns) {
+        const normalized = Array.isArray(list) ? list : [list];
+        if (!normalized.length) return list;
+
+        const used = new Set(
+            (this.campaigns || [])
+                .filter(c => c && typeof c === 'object' && !Array.isArray(c))
+                .map(c => this.normalizeEditorId(c[this.EDITOR_ID_FIELD]))
+                .filter(Boolean)
+        );
+
+        normalized.forEach(c => {
+            if (!c || typeof c !== 'object' || Array.isArray(c)) return;
+            const raw = this.normalizeEditorId(c[this.EDITOR_ID_FIELD]);
+            let id = raw && !used.has(raw) ? raw : null;
+            if (!id) {
+                do {
+                    id = this.generateEditorId();
+                } while (used.has(id));
+            }
+            c[this.EDITOR_ID_FIELD] = id;
+            used.add(id);
+        });
+        return list;
+    },
+
+    getCampaignByEditorId(editorId) {
+        return this.campaigns.find(c => c[this.EDITOR_ID_FIELD] === editorId);
+    },
+
+    stripEditorMetadata(campaigns) {
+        if (!Array.isArray(campaigns)) return campaigns;
+        return campaigns.map(c => {
+            if (!c || typeof c !== 'object' || Array.isArray(c)) return c;
+            if (!Object.prototype.hasOwnProperty.call(c, this.EDITOR_ID_FIELD)) return c;
+            const clone = { ...c };
+            delete clone[this.EDITOR_ID_FIELD];
+            return clone;
+        });
     },
     
     // V4 FIX #3: Single validation function (replaces duplicate code)
@@ -726,11 +794,12 @@ const app = {
         newCamp.doneDailyVisits = `0 of ${newCamp.DailyLimit}`;
         
         this.campaigns.unshift(newCamp);
+        this.ensureCampaignIds(newCamp);
         this.renderList();
         this.switchTab('list');
         
         // Auto-open edit modal
-        setTimeout(() => this.editCampaign(newCamp.id), 100);
+        setTimeout(() => this.editCampaign(newCamp[this.EDITOR_ID_FIELD]), 100);
     },
 
     saveAsTemplate() {
@@ -755,7 +824,7 @@ const app = {
         const select = document.getElementById('template-source-campaign');
         if (!select) return;
         select.innerHTML = '<option value="">-- Select Campaign --</option>' +
-            this.campaigns.map(c => `<option value="${c.id}">${this.escHtml(c.ProjectName)} (${c.Type})</option>`).join('');
+            this.campaigns.map(c => `<option value="${this.escHtml(c[this.EDITOR_ID_FIELD])}">${this.escHtml(c.ProjectName)} (${c.Type})</option>`).join('');
     },
 
     createFromCampaign() {
@@ -768,7 +837,7 @@ const app = {
             return;
         }
         
-        const campaign = this.campaigns.find(c => c.id === campaignId);
+        const campaign = this.getCampaignByEditorId(campaignId);
         if (!campaign) return;
         
         // Extract key config from campaign
@@ -837,13 +906,14 @@ const app = {
         newCamp.doneVisits = `0 of ${newCamp.numberOfVisits}`;
         newCamp.doneDailyVisits = `0 of ${newCamp.DailyLimit}`;
         this.campaigns.unshift(newCamp);
+        this.ensureCampaignIds(newCamp);
         this.saveToStorage(); // V4 FIX #1: Auto-save
         this.renderList();
-        this.editCampaign(newCamp.id);
+        this.editCampaign(newCamp[this.EDITOR_ID_FIELD]);
     },
 
     cloneCampaign(id) {
-        const original = this.campaigns.find(c => c.id === id);
+        const original = this.getCampaignByEditorId(id);
         if (!original) return;
         const clone = JSON.parse(JSON.stringify(original));
         clone.id = this.generateId();
@@ -853,6 +923,7 @@ const app = {
         clone.doneVisits = `0 of ${clone.numberOfVisits}`;
         clone.doneDailyVisits = `0 of ${clone.DailyLimit}`;
         this.campaigns.unshift(clone);
+        this.ensureCampaignIds(clone);
         this.saveToStorage(); // V4 FIX #1: Auto-save
         this.renderList();
     },
@@ -860,11 +931,11 @@ const app = {
     deleteCampaign(id) {
         if (!confirm("Delete this campaign?")) return;
         // V4 FIX #3: Store for undo
-        const deleted = this.campaigns.find(c => c.id === id);
+        const deleted = this.getCampaignByEditorId(id);
         if (deleted) {
             this.lastDeleted = { campaign: deleted, timestamp: Date.now() };
         }
-        this.campaigns = this.campaigns.filter(c => c.id !== id);
+        this.campaigns = this.campaigns.filter(c => c[this.EDITOR_ID_FIELD] !== id);
         this.selectedIds.delete(id);
         this.saveToStorage(); // V4 FIX #1: Auto-save
         this.renderList();
@@ -914,7 +985,7 @@ const app = {
         }
 
         // V4 FIX: Count only selected items in filtered view
-        const selectedInFilter = displayList.filter(c => this.selectedIds.has(c.id)).length;
+        const selectedInFilter = displayList.filter(c => this.selectedIds.has(c[this.EDITOR_ID_FIELD])).length;
         
         document.getElementById('total-campaigns').innerText = displayList.length;
         document.getElementById('selected-count').innerText = selectedInFilter;
@@ -929,11 +1000,12 @@ const app = {
             const progress = c.doneVisits || '0 of ?';
             const nextRunStr = c.nextRun ? new Date(c.nextRun).toLocaleString() : '-';
             const safeId = this.escHtml(c.id);
+            const safeEditorId = this.escHtml(c[this.EDITOR_ID_FIELD]);
             const safeName = this.escHtml(c.ProjectName);
             return `
             <tr>
                 <td class="col-checkbox">
-                    <input type="checkbox" onchange="app.toggleSelect('${safeId}', event)" ${this.selectedIds.has(c.id) ? 'checked' : ''}>
+                    <input type="checkbox" onchange="app.toggleSelect('${safeEditorId}', event)" ${this.selectedIds.has(c[this.EDITOR_ID_FIELD]) ? 'checked' : ''}>
                 </td>
                 <td>
                     <span class="text-${c.Checked ? 'success' : 'muted'} font-bold">
@@ -949,9 +1021,9 @@ const app = {
                 <td class="text-xs text-muted">${progress}</td>
                 <td class="text-xs">${nextRunStr}</td>
                 <td class="col-actions">
-                    <button class="btn btn-primary btn-sm" onclick="app.editCampaign('${safeId}')" title="Edit">✏️</button>
-                    <button class="btn btn-secondary btn-sm" onclick="app.cloneCampaign('${safeId}')" title="Clone">📋</button>
-                    <button class="btn btn-danger btn-sm" onclick="app.deleteCampaign('${safeId}')" title="Delete">✕</button>
+                    <button class="btn btn-primary btn-sm" onclick="app.editCampaign('${safeEditorId}')" title="Edit">✏️</button>
+                    <button class="btn btn-secondary btn-sm" onclick="app.cloneCampaign('${safeEditorId}')" title="Clone">📋</button>
+                    <button class="btn btn-danger btn-sm" onclick="app.deleteCampaign('${safeEditorId}')" title="Delete">✕</button>
                 </td>
             </tr>`;
         }).join('');
@@ -968,7 +1040,7 @@ const app = {
         // V4 FIX: Shift+click for range selection
         if (event && event.shiftKey && this.lastClickedId) {
             // Find indices
-            const ids = this.campaigns.map(c => c.id);
+            const ids = this.campaigns.map(c => c[this.EDITOR_ID_FIELD]);
             const lastIndex = ids.indexOf(this.lastClickedId);
             const currentIndex = ids.indexOf(id);
             
@@ -996,30 +1068,9 @@ const app = {
     },
 
     toggleSelectAll(el) {
-        if (el.checked) this.campaigns.forEach(c => this.selectedIds.add(c.id));
+        if (el.checked) this.campaigns.forEach(c => this.selectedIds.add(c[this.EDITOR_ID_FIELD]));
         else this.selectedIds.clear();
         this.renderList();
-    },
-    
-    // V4 FIX: ESC key to clear selection
-    init() {
-        // Load from localStorage
-        this.loadFromStorage();
-        // V4 FIX #4: Create debounced version for search input (300ms delay)
-        this.filterListDebounced = this.debounce(() => this.renderList(), 300);
-        this.renderList();
-        this.renderTemplates();
-        
-        // V4 FIX: ESC key handler
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.selectedIds.clear();
-                this.lastClickedId = null;
-                this.renderList();
-            }
-        });
-        
-        window.onbeforeunload = () => this.campaigns.length > 0 ? "You have unsaved changes." : null;
     },
 
     // #6: Live geo point counter
@@ -1041,7 +1092,7 @@ const app = {
 
     // --- EDIT CAMPAIGN (Full Modal) ---
     editCampaign(id) {
-        const c = this.campaigns.find(x => x.id === id);
+        const c = this.getCampaignByEditorId(id);
         if (!c) return;
 
         const nextRunVal = c.nextRun ? c.nextRun.substring(0, 16) : '';
@@ -1457,14 +1508,14 @@ const app = {
                     </div>
 
                     <div class="section-title" style="color:var(--danger)">Danger Zone</div>
-                    <button class="btn btn-danger btn-sm" onclick="app.resetProgress('${c.id}')">🔄 Reset Progress Counters</button>
+                    <button class="btn btn-danger btn-sm" onclick="app.resetProgress('${this.escHtml(c[this.EDITOR_ID_FIELD])}')">🔄 Reset Progress Counters</button>
                     <span class="text-xs text-muted" style="margin-left:0.5rem">Resets doneVisits and doneDailyVisits to 0</span>
                 </div>
 
             </div><!-- end modal-body -->
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="app.hideModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="app.saveEditedCampaign('${c.id}')">💾 Save Changes</button>
+                <button class="btn btn-primary" onclick="app.saveEditedCampaign('${this.escHtml(c[this.EDITOR_ID_FIELD])}')">💾 Save Changes</button>
             </div>
         </div>`;
 
@@ -1492,7 +1543,7 @@ const app = {
     },
 
     resetProgress(id) {
-        const c = this.campaigns.find(x => x.id === id);
+        const c = this.getCampaignByEditorId(id);
         if (!c) return;
         c.doneVisits = `0 of ${c.numberOfVisits}`;
         c.doneDailyVisits = `0 of ${c.DailyLimit}`;
@@ -1504,8 +1555,8 @@ const app = {
         alert('Progress reset to 0.');
     },
 
-    saveEditedCampaign(id) {
-        const c = this.campaigns.find(x => x.id === id);
+    saveEditedCampaign(id, skipValidation = false) {
+        const c = this.getCampaignByEditorId(id);
         if (!c) return;
 
         const g = (eid) => { const el = document.getElementById(eid); return el ? el.value : null; };
@@ -1535,7 +1586,7 @@ const app = {
         }
         
         // Show validation errors if any
-        if (errors.length > 0) {
+        if (errors.length > 0 && !skipValidation) {
             const errorHtml = `
                 <div class="validation-panel">
                     <div style="font-weight:600;margin-bottom:0.5rem;color:var(--danger)">⚠️ ${errors.length} Issue${errors.length > 1 ? 's' : ''} Found:</div>
@@ -1548,7 +1599,7 @@ const app = {
                 </div>
                 <div style="margin-top:1rem;text-align:right">
                     <button class="btn btn-secondary btn-sm" onclick="app.hideModal()">Cancel</button>
-                    <button class="btn btn-primary btn-sm" onclick="app.saveEditedCampaignForce('${id}')">Save Anyway</button>
+                    <button class="btn btn-primary btn-sm" onclick="app.saveEditedCampaignForce('${this.escHtml(id)}')">Save Anyway</button>
                 </div>
             `;
             
@@ -1673,13 +1724,13 @@ const app = {
             const panel = modalBody.querySelector('.validation-panel');
             if (panel) panel.remove();
         }
-        // Call original save function (it will re-validate but user already confirmed)
-        this.saveEditedCampaign(id);
+        // Call original save function and skip validation re-check
+        this.saveEditedCampaign(id, true);
     },
     
     // V4 NEW: Campaign Comparison
     compareCampaigns() {
-        const selected = this.campaigns.filter(c => this.selectedIds.has(c.id));
+        const selected = this.campaigns.filter(c => this.selectedIds.has(c[this.EDITOR_ID_FIELD]));
         if (selected.length < 2 || selected.length > 3) {
             alert("Select 2-3 campaigns to compare");
             return;
@@ -1757,7 +1808,7 @@ const app = {
         }
         
         // Get only selected IDs in filtered view
-        const selectedInFilter = displayList.filter(c => this.selectedIds.has(c.id));
+        const selectedInFilter = displayList.filter(c => this.selectedIds.has(c[this.EDITOR_ID_FIELD]));
         
         if (selectedInFilter.length === 0) {
             alert('No campaigns selected in current view');
@@ -1772,8 +1823,8 @@ const app = {
         }
         
         // Delete only selected campaigns
-        const selectedIds = new Set(selectedInFilter.map(c => c.id));
-        this.campaigns = this.campaigns.filter(c => !selectedIds.has(c.id));
+        const selectedIds = new Set(selectedInFilter.map(c => c[this.EDITOR_ID_FIELD]));
+        this.campaigns = this.campaigns.filter(c => !selectedIds.has(c[this.EDITOR_ID_FIELD]));
         this.selectedIds.clear();
         this.saveToStorage(); // V4 FIX #1: Auto-save
         this.renderList();
@@ -1781,7 +1832,7 @@ const app = {
 
     // #8: Export selected campaigns
     exportSelected() {
-        const selected = this.campaigns.filter(c => this.selectedIds.has(c.id));
+        const selected = this.campaigns.filter(c => this.selectedIds.has(c[this.EDITOR_ID_FIELD]));
         if (selected.length === 0) return;
         
         // V4 FIX #3: Use single validation function
@@ -1803,7 +1854,8 @@ const app = {
         selected.forEach(c => {
             if (typeof c.GMapRetriesFails !== 'number') c.GMapRetriesFails = parseInt(c.GMapRetriesFails) || 0;
         });
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(selected, null, 2));
+        const sanitized = this.stripEditorMetadata(selected);
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sanitized, null, 2));
         const a = document.createElement('a');
         a.setAttribute("href", dataStr);
         a.setAttribute("download", `ctr_selected_${selected.length}_campaigns_v4.json`);
@@ -1890,7 +1942,7 @@ const app = {
         const status = document.getElementById('bulk-status').value;
 
         this.campaigns.forEach(c => {
-            if (!this.selectedIds.has(c.id)) return;
+            if (!this.selectedIds.has(c[this.EDITOR_ID_FIELD])) return;
             if (total) { c.numberOfVisits = total; c.doneVisits = `0 of ${total}`; }
             if (daily) { c.DailyLimit = daily; c.doneDailyVisits = `0 of ${daily}`; }
             if (vmin) c.TimeOfVisitMin = vmin;
@@ -1920,25 +1972,52 @@ const app = {
     },
 
     runWizard() {
-        const name = document.getElementById('wiz-name').value;
-        const url = document.getElementById('wiz-url').value;
-        const keywords = document.getElementById('wiz-keywords').value.split(',').map(s => s.trim()).filter(x => x);
+        const errors = [];
+        const name = (document.getElementById('wiz-name').value || '').trim();
+        const url = (document.getElementById('wiz-url').value || '').trim();
+        const keywords = (document.getElementById('wiz-keywords').value || '').split(',').map(s => s.trim()).filter(x => x);
         const lat = parseFloat(document.getElementById('wiz-lat').value);
         const lon = parseFloat(document.getElementById('wiz-lon').value);
         const phone = document.getElementById('wiz-phone').value;
         const mapUrl = document.getElementById('wiz-map').value;
 
-        if (!name) return alert("Project Name is required");
-        if (isNaN(lat) || isNaN(lon)) return alert("Valid Coordinates required");
+        const parseIntField = (id, opts = {}) => {
+            const raw = document.getElementById(id)?.value;
+            if (raw === undefined || raw === null || String(raw).trim() === '') {
+                if (opts.fallback !== undefined) return opts.fallback;
+                errors.push(`${(opts.label || id)}: missing value`);
+                return null;
+            }
+            const value = Number(raw);
+            const label = opts.label || id;
+            const fallback = opts.fallback;
+            if (!Number.isFinite(value)) {
+                if (fallback !== undefined) return fallback;
+                errors.push(`${label}: missing or invalid number`);
+                return null;
+            }
+            const parsed = opts.integer ? value : value;
+            if (!Number.isFinite(parsed) || (opts.integer && !Number.isInteger(parsed))) {
+                errors.push(`${label}: must be an integer`);
+                return null;
+            }
+            const allowZero = opts.allowZero === true;
+            const min = opts.min ?? (allowZero ? 0 : 1);
+            if (parsed < min) errors.push(`${label}: must be ${allowZero ? 'greater than or equal to 0' : 'positive'}`);
+            if (opts.max !== undefined && parsed > opts.max) errors.push(`${label}: must be at most ${opts.max}`);
+            return parsed;
+        };
 
-        const variations = parseInt(document.getElementById('wiz-variations').value);
+        if (!name) errors.push('Project Name is required');
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) errors.push('Valid Coordinates are required');
+        if (typeof phone === 'string' && phone.includes(' ')) errors.push('Phone number should not contain spaces');
 
-        // #9: Read configurable visit/timing values
-        const visits = parseInt(document.getElementById('wiz-visits')?.value) || 1000;
-        const vmin = document.getElementById('wiz-vmin')?.value || '180';
-        const vmax = document.getElementById('wiz-vmax')?.value || '250';
-        const daily = document.getElementById('wiz-daily')?.value || '3';
-        const delayMin = document.getElementById('wiz-delaymin')?.value || '1300';
+        const variations = parseIntField('wiz-variations', { label: 'Variations', min: 1, max: 20, integer: true });
+        const visits = parseIntField('wiz-visits', { label: 'Total Visits', min: 1, integer: true, fallback: 1000 });
+        const vmin = parseIntField('wiz-vmin', { label: 'Visit Duration Min', min: 1, integer: true, fallback: 180 });
+        const vmax = parseIntField('wiz-vmax', { label: 'Visit Duration Max', min: 1, integer: true, fallback: 250 });
+        const daily = parseIntField('wiz-daily', { label: 'Daily Limit', min: 0, integer: true, allowZero: true, fallback: 3 });
+        const delayMin = parseIntField('wiz-delaymin', { label: 'Delay Between Visits Min', min: 1, integer: true, fallback: 1300 });
 
         const types = [];
         if (document.getElementById('gen-gsearch').checked) types.push('GSearch');
@@ -1948,9 +2027,15 @@ const app = {
         // #9: GSearchRef type
         if (document.getElementById('gen-gsearchref').checked) types.push('GSearchRef');
 
-        if (types.length === 0) return alert("Select at least one campaign type");
+        if (types.length === 0) errors.push('Select at least one campaign type');
+        if (vmin !== null && vmax !== null && vmin > vmax) errors.push('Visit Max must be greater than or equal to Visit Min');
+        if (daily !== null && visits !== null && daily > visits) errors.push('Daily limit cannot exceed total visits');
+
+        if (errors.length > 0) return alert(errors.join('\n'));
 
         let count = 0;
+        const generatedCampaigns = [];
+
         types.forEach(type => {
             for (let i = 0; i < variations; i++) {
                 const c = JSON.parse(JSON.stringify(BASE_TEMPLATE));
@@ -1966,11 +2051,11 @@ const app = {
 
                 // #9: Apply configurable visit counts and timing
                 c.numberOfVisits = String(visits);
-                c.DailyLimit = daily;
-                c.TimeOfVisitMin = "" + this.jitter(parseInt(vmin));
-                c.TimeOfVisitMax = "" + this.jitter(parseInt(vmax));
-                c.MinDelayAfterVisit = "" + this.jitter(parseInt(delayMin));
-                c.MaxDelayAfterVisit = "" + this.jitter(Math.floor(parseInt(delayMin) * 1.5));
+                c.DailyLimit = String(daily);
+                c.TimeOfVisitMin = "" + this.jitter(vmin);
+                c.TimeOfVisitMax = "" + this.jitter(vmax);
+                c.MinDelayAfterVisit = "" + this.jitter(delayMin);
+                c.MaxDelayAfterVisit = "" + this.jitter(Math.floor(delayMin * 1.5));
 
                 if (type === 'GSearch') {
                     c.TimeinGooglePagesMin = "" + this.jitter(15);
@@ -2017,10 +2102,13 @@ const app = {
                     c.lstCustomGeolocations = this.generateGeolocations(lat, lon, 1 + (i * 0.5), 75);
                 }
 
-                this.campaigns.unshift(c);
+                generatedCampaigns.push(c);
                 count++;
             }
         });
+        this.campaigns = [...generatedCampaigns, ...this.campaigns];
+        this.ensureCampaignIds(this.campaigns);
+        this.saveToStorage();
 
         alert(`Generated ${count} campaigns successfully!`);
         this.switchTab('list');
@@ -2042,19 +2130,25 @@ const app = {
     
     // V4.2 IMPROVEMENT: Sanitize campaign data on import (security)
     sanitizeCampaign(c) {
+        if (!c || typeof c !== 'object' || Array.isArray(c)) return null;
+
         const safe = {};
-        const stringFields = ['ProjectName', 'Type', 'TargetUrl', 'TargetName', 'TargetSearchEngine', 
-            'strGoogleSearchType', 'CreateTime', 'Filename', 'strStartTime', 'strEndTime', 
+        const stringFields = ['ProjectName', 'Type', 'TargetUrl', 'TargetName', 'TargetSearchEngine',
+            'strGoogleSearchType', 'CreateTime', 'Filename', 'strStartTime', 'strEndTime',
             'DeviceType', 'strNextDevice', 'AuthorId', 'Threads', 'CustomLanguage', 'id'];
-        const arrayFields = ['lstUsedProxies', 'lstCustomProxies', 'lstCustomGeolocations', 
+        const arrayFields = ['lstUsedProxies', 'lstCustomProxies', 'lstCustomGeolocations',
             'lstKeywords', 'lstSites', 'lstInternalIgnoreLinks', 'Keywords', 'UsedKeywords'];
-        
+
+        const isBlockedKey = key => key === '__proto__' || key === 'constructor' || key === 'prototype' || key === this.EDITOR_ID_FIELD;
+
         // Copy all fields
-        for (const key in c) {
+        for (const key of Object.keys(c)) {
+            if (!Object.prototype.hasOwnProperty.call(c, key)) continue;
+            if (isBlockedKey(key)) continue;
             if (stringFields.includes(key)) {
                 safe[key] = this.escHtml(String(c[key] || ''));
             } else if (arrayFields.includes(key)) {
-                safe[key] = Array.isArray(c[key]) ? c[key].map(item => this.escHtml(String(item))) : [];
+                safe[key] = Array.isArray(c[key]) ? c[key].map(item => this.escHtml(String(item || ''))) : [];
             } else {
                 safe[key] = c[key]; // Keep numbers, booleans as-is
             }
@@ -2073,16 +2167,17 @@ const app = {
                     // #7: Check import mode
                     const mode = document.querySelector('input[name="import-mode"]:checked')?.value || 'replace';
                     // V4.2 IMPROVEMENT: Sanitize on import (security)
-                    const sanitized = json.map(c => this.sanitizeCampaign(c));
+                    const sanitized = json.map(c => this.sanitizeCampaign(c)).filter(Boolean);
                     if (mode === 'merge') {
                         this.campaigns = [...this.campaigns, ...sanitized];
                     } else {
                         this.campaigns = sanitized;
                     }
+                    this.ensureCampaignIds(this.campaigns);
                     this.saveToStorage(); // Auto-save imported data
                     this.renderList();
                     this.switchTab('list');
-                    alert(`Loaded ${json.length} campaigns (${mode === 'merge' ? 'merged' : 'replaced'})`);
+                    alert(`Loaded ${sanitized.length} campaigns (${mode === 'merge' ? 'merged' : 'replaced'})`);
                 } else {
                     alert("Invalid file: Root must be a JSON array");
                 }
@@ -2096,20 +2191,21 @@ const app = {
     loadFromTextarea() {
         try {
             const txt = document.getElementById('json-editor').value;
-            const json = JSON.parse(txt);
-            if (Array.isArray(json)) {
-                // #7: Check import mode
-                const mode = document.querySelector('input[name="import-mode"]:checked')?.value || 'replace';
-                // V4.2 IMPROVEMENT: Sanitize on import (security)
-                const sanitized = json.map(c => this.sanitizeCampaign(c));
-                if (mode === 'merge') {
-                    this.campaigns = [...this.campaigns, ...sanitized];
-                } else {
-                    this.campaigns = sanitized;
-                }
-                this.saveToStorage(); // Auto-save imported data
-                this.renderList();
-                this.switchTab('list');
+                const json = JSON.parse(txt);
+                if (Array.isArray(json)) {
+                    // #7: Check import mode
+                    const mode = document.querySelector('input[name="import-mode"]:checked')?.value || 'replace';
+                    // V4.2 IMPROVEMENT: Sanitize on import (security)
+                    const sanitized = json.map(c => this.sanitizeCampaign(c)).filter(Boolean);
+                    if (mode === 'merge') {
+                        this.campaigns = [...this.campaigns, ...sanitized];
+                    } else {
+                        this.campaigns = sanitized;
+                    }
+                    this.ensureCampaignIds(this.campaigns);
+                    this.saveToStorage(); // Auto-save imported data
+                    this.renderList();
+                    this.switchTab('list');
             } else {
                 alert("Root must be a JSON array");
             }
@@ -2139,7 +2235,8 @@ const app = {
         this.campaigns.forEach(c => {
             if (typeof c.GMapRetriesFails !== 'number') c.GMapRetriesFails = parseInt(c.GMapRetriesFails) || 0;
         });
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.campaigns, null, 2));
+        const sanitized = this.stripEditorMetadata(this.campaigns);
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sanitized, null, 2));
         const a = document.createElement('a');
         a.setAttribute("href", dataStr);
         a.setAttribute("download", "ctr_campaigns_v4.json"); // V4 FIX #4: Updated filename
