@@ -1157,11 +1157,20 @@ Respond in a helpful, concise manner. Use markdown formatting. Reference specifi
                 messages: messages
             };
 
-            // o1 models use different parameters
-            if (model.startsWith('o1')) {
+            // Check if model requires max_completion_tokens (o1 and newer GPT-4o models)
+            const requiresMaxCompletionTokens = model.startsWith('o1') || 
+                model.includes('gpt-4o') || 
+                model.includes('gpt-4.5');
+            
+            if (requiresMaxCompletionTokens) {
                 requestBody.max_completion_tokens = 1000;
-                // o1 doesn't support temperature or stream
+                // o1 models don't support temperature or stream
+                if (!model.startsWith('o1')) {
+                    requestBody.temperature = 0.7;
+                    requestBody.stream = false;
+                }
             } else {
+                // Legacy models (GPT-3.5, GPT-4, GPT-4-turbo)
                 requestBody.temperature = 0.7;
                 requestBody.max_tokens = 1000;
                 requestBody.stream = false;
