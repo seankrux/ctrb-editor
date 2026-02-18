@@ -2039,6 +2039,29 @@ const app = {
     },
 
     // --- FILE I/O ---
+    
+    // V4.2 IMPROVEMENT: Sanitize campaign data on import (security)
+    sanitizeCampaign(c) {
+        const safe = {};
+        const stringFields = ['ProjectName', 'Type', 'TargetUrl', 'TargetName', 'TargetSearchEngine', 
+            'strGoogleSearchType', 'CreateTime', 'Filename', 'strStartTime', 'strEndTime', 
+            'DeviceType', 'strNextDevice', 'AuthorId', 'Threads', 'CustomLanguage', 'id'];
+        const arrayFields = ['lstUsedProxies', 'lstCustomProxies', 'lstCustomGeolocations', 
+            'lstKeywords', 'lstSites', 'lstInternalIgnoreLinks', 'Keywords', 'UsedKeywords'];
+        
+        // Copy all fields
+        for (const key in c) {
+            if (stringFields.includes(key)) {
+                safe[key] = this.escHtml(String(c[key] || ''));
+            } else if (arrayFields.includes(key)) {
+                safe[key] = Array.isArray(c[key]) ? c[key].map(item => this.escHtml(String(item))) : [];
+            } else {
+                safe[key] = c[key]; // Keep numbers, booleans as-is
+            }
+        }
+        return safe;
+    },
+    
     handleFileUpload(input) {
         const file = input.files[0];
         if (!file) return;
@@ -2049,11 +2072,14 @@ const app = {
                 if (Array.isArray(json)) {
                     // #7: Check import mode
                     const mode = document.querySelector('input[name="import-mode"]:checked')?.value || 'replace';
+                    // V4.2 IMPROVEMENT: Sanitize on import (security)
+                    const sanitized = json.map(c => this.sanitizeCampaign(c));
                     if (mode === 'merge') {
-                        this.campaigns = [...this.campaigns, ...json];
+                        this.campaigns = [...this.campaigns, ...sanitized];
                     } else {
-                        this.campaigns = json;
+                        this.campaigns = sanitized;
                     }
+                    this.saveToStorage(); // Auto-save imported data
                     this.renderList();
                     this.switchTab('list');
                     alert(`Loaded ${json.length} campaigns (${mode === 'merge' ? 'merged' : 'replaced'})`);
@@ -2074,11 +2100,14 @@ const app = {
             if (Array.isArray(json)) {
                 // #7: Check import mode
                 const mode = document.querySelector('input[name="import-mode"]:checked')?.value || 'replace';
+                // V4.2 IMPROVEMENT: Sanitize on import (security)
+                const sanitized = json.map(c => this.sanitizeCampaign(c));
                 if (mode === 'merge') {
-                    this.campaigns = [...this.campaigns, ...json];
+                    this.campaigns = [...this.campaigns, ...sanitized];
                 } else {
-                    this.campaigns = json;
+                    this.campaigns = sanitized;
                 }
+                this.saveToStorage(); // Auto-save imported data
                 this.renderList();
                 this.switchTab('list');
             } else {
