@@ -1142,25 +1142,35 @@ Respond in a helpful, concise manner. Use markdown formatting. Reference specifi
         try {
             const endpoint = config.useLocalAI ? config.localEndpoint : config.apiEndpoint;
             const model = config.useLocalAI ? config.localModel : config.model;
-            
+
             const headers = {
                 'Content-Type': 'application/json'
             };
-            
+
             if (!config.useLocalAI && config.apiKey) {
                 headers['Authorization'] = `Bearer ${config.apiKey}`;
+            }
+
+            // Build request body based on model
+            const requestBody = {
+                model: model,
+                messages: messages
+            };
+
+            // o1 models use different parameters
+            if (model.startsWith('o1')) {
+                requestBody.max_completion_tokens = 1000;
+                // o1 doesn't support temperature or stream
+            } else {
+                requestBody.temperature = 0.7;
+                requestBody.max_tokens = 1000;
+                requestBody.stream = false;
             }
 
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: headers,
-                body: JSON.stringify({
-                    model: model,
-                    messages: messages,
-                    temperature: 0.7,
-                    max_tokens: 1000,
-                    stream: false
-                })
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
