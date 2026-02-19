@@ -1,11 +1,25 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 import { useThemeStore } from '@/store';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Generate stable star positions
+function generateStars(count: number) {
+  return Array.from({ length: count }, (_, i) => ({
+    id: i,
+    left: Math.random() * 100,
+    top: Math.random() * 100,
+    duration: 2 + Math.random() * 3,
+    delay: Math.random() * 2,
+  }));
+}
+
 export default function NebulaBackground() {
   const isDark = useThemeStore((state) => state.isDark);
+
+  // Memoize star positions to prevent re-calculation on re-renders
+  const stars = useMemo(() => generateStars(50), []);
 
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden">
@@ -35,22 +49,22 @@ export default function NebulaBackground() {
       {/* Animated stars */}
       {isDark && (
         <div className="absolute inset-0">
-          {[...Array(50)].map((_, i) => (
+          {stars.map((star) => (
             <motion.div
-              key={i}
+              key={star.id}
               className="absolute w-1 h-1 bg-white rounded-full"
               style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
+                left: `${star.left}%`,
+                top: `${star.top}%`,
               }}
               animate={{
                 opacity: [0.2, 1, 0.2],
                 scale: [1, 1.5, 1],
               }}
               transition={{
-                duration: 2 + Math.random() * 3,
+                duration: star.duration,
                 repeat: Infinity,
-                delay: Math.random() * 2,
+                delay: star.delay,
               }}
             />
           ))}
@@ -62,16 +76,15 @@ export default function NebulaBackground() {
         {isDark && (
           <>
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.3 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 3 }}
               className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-600/20 rounded-full blur-3xl"
               style={{ filter: 'blur(100px)' }}
-              animate={{
+              initial={{ opacity: 0 }}
+              animate={{ 
+                opacity: 0.3,
                 x: [0, 50, 0],
                 y: [0, 30, 0],
               }}
+              exit={{ opacity: 0 }}
               transition={{
                 duration: 20,
                 repeat: Infinity,
@@ -79,16 +92,15 @@ export default function NebulaBackground() {
               }}
             />
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.2 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 3, delay: 1 }}
               className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent-purple/20 rounded-full blur-3xl"
               style={{ filter: 'blur(100px)' }}
-              animate={{
+              initial={{ opacity: 0 }}
+              animate={{ 
+                opacity: 0.2,
                 x: [0, -40, 0],
                 y: [0, -50, 0],
               }}
+              exit={{ opacity: 0 }}
               transition={{
                 duration: 25,
                 repeat: Infinity,
@@ -96,16 +108,15 @@ export default function NebulaBackground() {
               }}
             />
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.15 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 3, delay: 2 }}
               className="absolute top-1/2 right-1/3 w-64 h-64 bg-accent-cyan/20 rounded-full blur-3xl"
               style={{ filter: 'blur(100px)' }}
-              animate={{
+              initial={{ opacity: 0 }}
+              animate={{ 
+                opacity: 0.15,
                 x: [0, 30, 0],
                 y: [0, 40, 0],
               }}
+              exit={{ opacity: 0 }}
               transition={{
                 duration: 18,
                 repeat: Infinity,

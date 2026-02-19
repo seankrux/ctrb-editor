@@ -56,7 +56,7 @@ export interface Campaign {
   UseCustomProxy: boolean;
   lstCustomProxies: string[];
   GMapRetriesFails: number;
-  [key: string]: any;
+  [key: string]: string | number | boolean | string[] | undefined;
 }
 
 interface CampaignState {
@@ -168,7 +168,7 @@ export const useCampaignStore = create<CampaignState>()(
           : campaigns;
         
         // Strip internal fields
-        const sanitized = toExport.map(({ __editorId, ...rest }) => rest);
+        const sanitized = toExport.map(({ __editorId: _, ...rest }) => rest);
         
         const dataStr = JSON.stringify(sanitized, null, 2);
         const blob = new Blob([dataStr], { type: 'application/json' });
