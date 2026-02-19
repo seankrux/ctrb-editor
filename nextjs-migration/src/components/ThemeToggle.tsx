@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Sun, Moon, Sparkles } from 'lucide-react';
 import { useThemeStore } from '@/store';
 import { cn } from '@/lib/utils';
@@ -69,5 +69,3 @@ export default function ThemeToggle() {
     </motion.button>
   );
 }
-
-import { AnimatePresence } from 'framer-motion';
