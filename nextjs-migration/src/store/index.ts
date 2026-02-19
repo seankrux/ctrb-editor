@@ -167,8 +167,9 @@ export const useCampaignStore = create<CampaignState>()(
           ? campaigns.filter((c) => ids.includes(c.id))
           : campaigns;
         
-        // Strip internal fields
-        const sanitized = toExport.map(({ __editorId: _, ...rest }) => rest);
+        // Strip internal fields (eslint ignore for intentional unused var)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const sanitized = toExport.map(({ __editorId, ...rest }) => rest);
         
         const dataStr = JSON.stringify(sanitized, null, 2);
         const blob = new Blob([dataStr], { type: 'application/json' });
