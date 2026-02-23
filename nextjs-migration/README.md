@@ -11,6 +11,7 @@ Complete Next.js 14 campaign editor with nebula theme and AI-powered assistance.
 - 🤖 **AI Assistant** - OpenAI/Ollama integration
 - 🧪 **Playwright Tests** - 30 E2E tests (100% pass)
 - 🚀 **Production Ready** - Deployed on Vercel
+- 🔄 **CI/CD** - Automated testing on every update
 
 ---
 
@@ -23,6 +24,23 @@ Complete Next.js 14 campaign editor with nebula theme and AI-powered assistance.
 | **Static Pages** | 8 |
 | **E2E Tests** | 30/30 PASS |
 | **Lighthouse Target** | 95+ |
+
+---
+
+## 🔄 CI/CD Status
+
+[![CI](https://github.com/seankrux/CTRB-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/seankrux/CTRB-editor/actions/workflows/ci.yml)
+[![E2E Tests](https://github.com/seankrux/CTRB-editor/actions/workflows/e2e-tests.yml/badge.svg)](https://github.com/seankrux/CTRB-editor/actions/workflows/e2e-tests.yml)
+[![Smoke Tests](https://github.com/seankrux/CTRB-editor/actions/workflows/smoke-tests.yml/badge.svg)](https://github.com/seankrux/CTRB-editor/actions/workflows/smoke-tests.yml)
+
+**Automated Testing:** Every push and pull request triggers:
+- ESLint validation
+- TypeScript type checking
+- Next.js production build
+- Full E2E test suite (5 browsers)
+- Production smoke tests (after Vercel deploy)
+
+See [CI_CD_GUIDE.md](./CI_CD_GUIDE.md) for details.
 
 ---
 
