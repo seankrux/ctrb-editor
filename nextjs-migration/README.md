@@ -1,16 +1,45 @@
-# CTRBooster Nebula - Next.js Migration Package
+# CTRBooster Nebula - Next.js Campaign Editor
 
 ## 🌌 Overview
 
-This is a complete Next.js 14 migration of the CTRBooster Campaign Editor with:
+Complete Next.js 14 campaign editor with nebula theme and AI-powered assistance.
 
-- ✨ **Nebula Theme** - Modern, sophisticated design with cosmic animations
-- 🌓 **Light/Dark Mode** - Smooth transitions between themes
-- ⚛️ **React 18** - Full TypeScript support
-- 🎨 **Tailwind CSS** - Custom nebula theme configuration
-- 🤖 **AI Assistant** - Integrated chat with OpenAI/Ollama support
-- 🧪 **Playwright Tests** - Comprehensive test suite
-- 🚀 **Vercel Ready** - One-click deployment
+- ✨ **Nebula Theme** - Modern cosmic design with animated stars
+- 🌓 **Light/Dark Mode** - Smooth theme transitions
+- ⚛️ **React 18 + TypeScript** - Type-safe development
+- 🎨 **Tailwind CSS** - Custom nebula configuration
+- 🤖 **AI Assistant** - OpenAI/Ollama integration
+- 🧪 **Playwright Tests** - 30 E2E tests (100% pass)
+- 🚀 **Production Ready** - Deployed on Vercel
+
+---
+
+## 📊 Build Metrics
+
+| Metric | Value |
+|--------|-------|
+| **Build Time** | ~30s |
+| **First Load JS** | 87 kB |
+| **Static Pages** | 8 |
+| **E2E Tests** | 30/30 PASS |
+| **Lighthouse Target** | 95+ |
+
+---
+
+## 🚀 Quick Deploy
+
+### One-Click Deploy
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/seankrux/CTRB-editor&project-name=ctrbooster-nebula&repository-name=ctrbooster-nebula&root-directory=1.%20CTRB%20Json%20Editor/nextjs-migration)
+
+### GitHub Repository
+
+**https://github.com/seankrux/CTRB-editor**
+
+```bash
+# The Next.js app is in:
+1. CTRB Json Editor/nextjs-migration/
+```
 
 ---
 
