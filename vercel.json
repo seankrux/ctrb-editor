@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "cd nextjs-migration && npm install && npm run build",
-  "installCommand": "cd nextjs-migration && npm install",
+  "buildCommand": "cd nextjs-migration && npm run build",
+  "installCommand": "cd nextjs-migration && npm ci",
   "devCommand": "cd nextjs-migration && npm run dev",
   "outputDirectory": "nextjs-migration/.next"
 }

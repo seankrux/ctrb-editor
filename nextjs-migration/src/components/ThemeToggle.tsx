@@ -1,71 +1,40 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
-import { Sun, Moon, Sparkles } from 'lucide-react';
-import { useThemeStore } from '@/store';
-import { cn } from '@/lib/utils';
+import { useEffect, useState } from 'react';
+import { applyTheme, resolveInitialTheme, type ThemeMode } from '@/lib/theme';
 
 export default function ThemeToggle() {
-  const { isDark, toggleTheme } = useThemeStore();
+  const [theme, setTheme] = useState<ThemeMode>('dark');
+
+  useEffect(() => {
+    const nextTheme = resolveInitialTheme();
+    setTheme(nextTheme);
+    applyTheme(nextTheme);
+  }, []);
+
+  const isDark = theme === 'dark';
+
+  function toggleTheme() {
+    const nextTheme: ThemeMode = isDark ? 'light' : 'dark';
+    setTheme(nextTheme);
+    applyTheme(nextTheme);
+  }
+
+  const baseClasses =
+    'inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2';
+  const variantClasses = isDark
+    ? 'border-primary-400/40 bg-primary-500/15 text-primary-100 hover:bg-primary-500/25'
+    : 'border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200';
 
   return (
-    <motion.button
+    <button
+      type="button"
       onClick={toggleTheme}
-      className={cn(
-        'relative flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm transition-all duration-300',
-        'hover:scale-105 active:scale-95',
-        isDark
-          ? 'bg-primary-500/20 text-primary-200 hover:bg-primary-500/30 border border-primary-500/30'
-          : 'bg-amber-500/20 text-amber-700 hover:bg-amber-500/30 border border-amber-500/30'
-      )}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+      aria-pressed={!isDark}
+      className={`${baseClasses} ${variantClasses}`}
     >
-      {/* Animated icon container */}
-      <div className="relative w-5 h-5">
-        <AnimatePresence mode="wait">
-          {isDark ? (
-            <motion.div
-              key="moon"
-              initial={{ rotate: -90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: 90, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Moon className="w-5 h-5" />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="sun"
-              initial={{ rotate: 90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: -90, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Sun className="w-5 h-5" />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Label with animation */}
-      <motion.span
-        initial={false}
-        animate={{ opacity: 1 }}
-        className="hidden sm:inline"
-      >
-        {isDark ? 'Dark' : 'Light'}
-      </motion.span>
-
-      {/* Sparkle effect on hover */}
-      <motion.div
-        className="absolute -top-1 -right-1"
-        initial={{ scale: 0 }}
-        whileHover={{ scale: 1 }}
-        transition={{ type: 'spring', stiffness: 500 }}
-      >
-        <Sparkles className="w-3 h-3 text-accent-cyan" />
-      </motion.div>
-    </motion.button>
+      <span aria-hidden>{isDark ? 'DM' : 'LM'}</span>
+      <span>{isDark ? 'Dark mode' : 'Light mode'}</span>
+    </button>
   );
 }

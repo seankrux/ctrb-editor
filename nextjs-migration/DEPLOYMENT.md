@@ -37,13 +37,12 @@ git push -u origin main
    - **Output Directory:** `.next`
 5. Click **"Deploy"**
 
-#### 3. Add Environment Variables (Optional)
+#### 3. Environment Variables
 
-In Vercel Dashboard → Settings → Environment Variables:
+No production environment variables are required for the current application shell.
 
-| Name | Value | Environment |
-|------|-------|-------------|
-| `OPENAI_API_KEY` | `sk-...` | Production |
+If you add runtime integrations later, document them in `nextjs-migration/.env.example`
+before adding values in Vercel Dashboard → Settings → Environment Variables.
 
 ---
 
@@ -273,18 +272,23 @@ vercel rollback
 
 ### Environment Variables
 
-Never commit `.env` files:
+Current production runtime requires no secrets.
+
+Never commit local env files:
 
 ```bash
-# .env.local
-OPENAI_API_KEY=sk-...
+# local-only files (examples)
+.env.local
+.env.production.local
 ```
 
 ```gitignore
 # .gitignore
 .env
 .env.local
-.env.production
+.env.*
+!.env.example
+!*.env.example
 ```
 
 ### Rate Limiting
@@ -308,7 +312,7 @@ For deployment issues:
 1. Check Vercel deployment logs
 2. Review build errors
 3. Test locally first
-4. Check environment variables
+4. Check optional environment variable overrides against `.env.example`
 
 ---
 

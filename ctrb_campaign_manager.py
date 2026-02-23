@@ -80,7 +80,7 @@ BASE_CAMPAIGN_TEMPLATE = {
     "Filename": "",  # Will be generated
     "nextRun": "",  # Will be generated
     "UseCustomLanguage": False,
-    "CustomLanguage": ""
+    "CustomLanguage": "",
 }
 
 # Campaign type-specific configurations
@@ -125,13 +125,14 @@ CAMPAIGN_TYPE_CONFIGS = {
         "TimeinGooglePagesMin": "0",
         "TimeinGooglePagesMax": "0",
         "UseGeolocation": False,
-    }
+    },
 }
 
 
 # ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
+
 
 def generate_campaign_id() -> str:
     """Generate a random campaign ID."""
@@ -163,7 +164,9 @@ def generate_iso_date_midnight() -> str:
     return dt.strftime("%Y-%m-%dT%H:%M:%S") + dt.strftime("%z")
 
 
-def generate_geolocations(lat: float, lon: float, radius_miles: float, count: int = 75) -> List[str]:
+def generate_geolocations(
+    lat: float, lon: float, radius_miles: float, count: int = 75
+) -> List[str]:
     """
     Generate random geolocations around a center point.
 
@@ -203,13 +206,16 @@ def validate_progress_string(done: int, total: int) -> str:
 # CAMPAIGN BUILDER
 # ============================================================================
 
+
 class CampaignBuilder:
     """Builder class for creating CTRBooster campaigns."""
 
     def __init__(self, campaign_type: str = "RefDVisit"):
         """Initialize with campaign type."""
         if campaign_type not in CAMPAIGN_TYPE_CONFIGS:
-            raise ValueError(f"Invalid campaign type: {campaign_type}. Must be one of: {list(CAMPAIGN_TYPE_CONFIGS.keys())}")
+            raise ValueError(
+                f"Invalid campaign type: {campaign_type}. Must be one of: {list(CAMPAIGN_TYPE_CONFIGS.keys())}"
+            )
 
         # Start with base template
         self.campaign = copy.deepcopy(BASE_CAMPAIGN_TEMPLATE)
@@ -229,12 +235,12 @@ class CampaignBuilder:
         self.campaign["dtTodayDate"] = generate_iso_date_midnight()
         self.campaign["nextRun"] = generate_iso_datetime(offset_hours=1)
 
-    def set_project_name(self, name: str) -> 'CampaignBuilder':
+    def set_project_name(self, name: str) -> "CampaignBuilder":
         """Set project name."""
         self.campaign["ProjectName"] = name
         return self
 
-    def set_visits(self, total: int, daily_limit: int = 3) -> 'CampaignBuilder':
+    def set_visits(self, total: int, daily_limit: int = 3) -> "CampaignBuilder":
         """Set visit quotas."""
         self.campaign["numberOfVisits"] = str(total)
         self.campaign["doneVisits"] = validate_progress_string(0, total)
@@ -242,18 +248,22 @@ class CampaignBuilder:
         self.campaign["doneDailyVisits"] = validate_progress_string(0, 1)
         return self
 
-    def set_geolocation(self, lat: float, lon: float, radius_miles: float = 1.0, count: int = 75) -> 'CampaignBuilder':
+    def set_geolocation(
+        self, lat: float, lon: float, radius_miles: float = 1.0, count: int = 75
+    ) -> "CampaignBuilder":
         """Set geolocation targeting."""
         self.campaign["strMiles"] = str(radius_miles)
-        self.campaign["lstCustomGeolocations"] = generate_geolocations(lat, lon, radius_miles, count)
+        self.campaign["lstCustomGeolocations"] = generate_geolocations(
+            lat, lon, radius_miles, count
+        )
         return self
 
-    def set_target_sites(self, sites: List[str]) -> 'CampaignBuilder':
+    def set_target_sites(self, sites: List[str]) -> "CampaignBuilder":
         """Set target URLs/sites."""
         self.campaign["lstSites"] = sites
         return self
 
-    def set_keywords(self, keywords: List[str]) -> 'CampaignBuilder':
+    def set_keywords(self, keywords: List[str]) -> "CampaignBuilder":
         """Set action keywords."""
         self.campaign["Keywords"] = keywords
         self.campaign["UsedKeywords"] = []
@@ -268,8 +278,8 @@ class CampaignBuilder:
         referral_min: int = 30,
         referral_max: int = 90,
         delay_min: int = 1300,
-        delay_max: int = 2000
-    ) -> 'CampaignBuilder':
+        delay_max: int = 2000,
+    ) -> "CampaignBuilder":
         """Set timing ranges (in seconds)."""
         self.campaign["TimeOfVisitMin"] = str(visit_min)
         self.campaign["TimeOfVisitMax"] = str(visit_max)
@@ -281,32 +291,38 @@ class CampaignBuilder:
         self.campaign["MaxDelayAfterVisit"] = str(delay_max)
         return self
 
-    def set_schedule(self, start_time: str = "10:00 AM", end_time: str = "09:00 PM") -> 'CampaignBuilder':
+    def set_schedule(
+        self, start_time: str = "10:00 AM", end_time: str = "09:00 PM"
+    ) -> "CampaignBuilder":
         """Set operating hours."""
         self.campaign["strStartTime"] = start_time
         self.campaign["strEndTime"] = end_time
         return self
 
-    def set_device(self, device_type: str = "Desktop", mobile_percentage: float = 0.0) -> 'CampaignBuilder':
+    def set_device(
+        self, device_type: str = "Desktop", mobile_percentage: float = 0.0
+    ) -> "CampaignBuilder":
         """Set device configuration."""
         self.campaign["DeviceType"] = device_type
         self.campaign["strNextDevice"] = device_type
         self.campaign["strMobileUseragentPecentage"] = str(mobile_percentage)
         return self
 
-    def enable_gmb_interaction(self, enabled: bool = True) -> 'CampaignBuilder':
+    def enable_gmb_interaction(self, enabled: bool = True) -> "CampaignBuilder":
         """Enable/disable GMB interactions."""
         self.campaign["UseGMBInteraction"] = enabled
         return self
 
-    def enable_custom_proxy(self, enabled: bool = True, proxies: List[str] = None) -> 'CampaignBuilder':
+    def enable_custom_proxy(
+        self, enabled: bool = True, proxies: Optional[List[str]] = None
+    ) -> "CampaignBuilder":
         """Enable custom proxy usage."""
         self.campaign["UseCustomProxy"] = enabled
         if proxies:
             self.campaign["lstCustomProxies"] = proxies
         return self
 
-    def set_custom_field(self, field: str, value: Any) -> 'CampaignBuilder':
+    def set_custom_field(self, field: str, value: Any) -> "CampaignBuilder":
         """Set any custom field value."""
         self.campaign[field] = value
         return self
@@ -325,7 +341,9 @@ class CampaignBuilder:
                 self.campaign["TargetUrl"] = self.campaign["lstSites"][0]
             elif self.campaign["Keywords"]:
                 # Fallback: use first URL keyword
-                url_keywords = [k for k in self.campaign["Keywords"] if k.startswith('http')]
+                url_keywords = [
+                    k for k in self.campaign["Keywords"] if k.startswith("http")
+                ]
                 if url_keywords:
                     self.campaign["TargetUrl"] = url_keywords[0]
 
@@ -339,6 +357,7 @@ class CampaignBuilder:
 # ============================================================================
 # CAMPAIGN MANAGER
 # ============================================================================
+
 
 class CampaignManager:
     """Manager for CTRBooster backup files."""
@@ -358,7 +377,7 @@ class CampaignManager:
         if not path.exists():
             raise FileNotFoundError(f"File not found: {filepath}")
 
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         if not isinstance(data, list):
@@ -377,7 +396,7 @@ class CampaignManager:
         path = Path(filepath)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(path, 'w', encoding='utf-8') as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(self.campaigns, f, indent=indent)
 
         return len(self.campaigns)
@@ -443,7 +462,7 @@ class CampaignManager:
         return {
             "total_campaigns": len(self.campaigns),
             "campaign_types": dict(types),
-            "total_planned_visits": total_visits
+            "total_planned_visits": total_visits,
         }
 
     def filter_by_type(self, campaign_type: str) -> List[Dict[str, Any]]:
@@ -459,6 +478,7 @@ class CampaignManager:
 # QUICK TEMPLATES
 # ============================================================================
 
+
 class QuickTemplates:
     """Pre-built campaign templates for common scenarios."""
 
@@ -468,16 +488,18 @@ class QuickTemplates:
         lat: float,
         lon: float,
         search_keywords: List[str],
-        visits: int = 1000
+        visits: int = 1000,
     ) -> Dict[str, Any]:
         """GSearch campaign for brand searches."""
-        return (CampaignBuilder("GSearch")
-                .set_project_name(project_name)
-                .set_geolocation(lat, lon, radius_miles=3.0, count=50)
-                .set_keywords(search_keywords)
-                .set_visits(visits, daily_limit=3)
-                .set_timing(visit_min=180, visit_max=250)
-                .build())
+        return (
+            CampaignBuilder("GSearch")
+            .set_project_name(project_name)
+            .set_geolocation(lat, lon, radius_miles=3.0, count=50)
+            .set_keywords(search_keywords)
+            .set_visits(visits, daily_limit=3)
+            .set_timing(visit_min=180, visit_max=250)
+            .build()
+        )
 
     @staticmethod
     def gmap_local(
@@ -485,21 +507,23 @@ class QuickTemplates:
         lat: float,
         lon: float,
         gmb_urls: List[str],
-        phone_number: str = None,
-        visits: int = 1000
+        phone_number: Optional[str] = None,
+        visits: int = 1000,
     ) -> Dict[str, Any]:
         """GMap campaign for local business."""
         keywords = []
         if phone_number:
             keywords.append(f"tel:{phone_number}")
 
-        return (CampaignBuilder("GMap")
-                .set_project_name(project_name)
-                .set_geolocation(lat, lon, radius_miles=1.0, count=75)
-                .set_target_sites(gmb_urls)
-                .set_keywords(keywords)
-                .set_visits(visits, daily_limit=3)
-                .build())
+        return (
+            CampaignBuilder("GMap")
+            .set_project_name(project_name)
+            .set_geolocation(lat, lon, radius_miles=1.0, count=75)
+            .set_target_sites(gmb_urls)
+            .set_keywords(keywords)
+            .set_visits(visits, daily_limit=3)
+            .build()
+        )
 
     @staticmethod
     def referal_visit(
@@ -508,40 +532,46 @@ class QuickTemplates:
         lon: float,
         target_sites: List[str],
         action_keywords: List[str],
-        visits: int = 100
+        visits: int = 100,
     ) -> Dict[str, Any]:
         """RefDVisit campaign for referral traffic."""
-        return (CampaignBuilder("RefDVisit")
-                .set_project_name(project_name)
-                .set_geolocation(lat, lon, radius_miles=3.0, count=50)
-                .set_target_sites(target_sites)
-                .set_keywords(action_keywords)
-                .set_visits(visits, daily_limit=2)
-                .set_timing(
-                    visit_min=180, visit_max=250,
-                    referral_min=60, referral_max=120,
-                    delay_min=1800, delay_max=2400
-                )
-                .build())
+        return (
+            CampaignBuilder("RefDVisit")
+            .set_project_name(project_name)
+            .set_geolocation(lat, lon, radius_miles=3.0, count=50)
+            .set_target_sites(target_sites)
+            .set_keywords(action_keywords)
+            .set_visits(visits, daily_limit=2)
+            .set_timing(
+                visit_min=180,
+                visit_max=250,
+                referral_min=60,
+                referral_max=120,
+                delay_min=1800,
+                delay_max=2400,
+            )
+            .build()
+        )
 
     @staticmethod
     def direct_visit(
-        project_name: str,
-        website_url: str,
-        visits: int = 100
+        project_name: str, website_url: str, visits: int = 100
     ) -> Dict[str, Any]:
         """DirectVisit campaign for direct website traffic."""
-        return (CampaignBuilder("DirectVisit")
-                .set_project_name(project_name)
-                .set_keywords([website_url])
-                .set_visits(visits, daily_limit=2)
-                .set_custom_field("TargetUrl", website_url)
-                .build())
+        return (
+            CampaignBuilder("DirectVisit")
+            .set_project_name(project_name)
+            .set_keywords([website_url])
+            .set_visits(visits, daily_limit=2)
+            .set_custom_field("TargetUrl", website_url)
+            .build()
+        )
 
 
 # ============================================================================
 # CLI INTERFACE
 # ============================================================================
+
 
 def print_menu():
     """Print main menu."""
@@ -571,21 +601,83 @@ def create_campaign_interactive() -> Dict[str, Any]:
     for i, ctype in enumerate(CAMPAIGN_TYPE_CONFIGS.keys(), 1):
         print(f"  {i}. {ctype}")
 
-    type_choice = input("\nSelect type (1-5): ").strip()
     types_list = list(CAMPAIGN_TYPE_CONFIGS.keys())
-    campaign_type = types_list[int(type_choice) - 1]
+    while True:
+        type_choice = input("\nSelect type (1-5): ").strip()
+        try:
+            idx = int(type_choice) - 1
+            if 0 <= idx < len(types_list):
+                campaign_type = types_list[idx]
+                break
+            print("Invalid selection. Please enter a number between 1 and 5.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
 
     # Basic info
     project_name = input("Project name: ").strip()
-    visits = int(input("Total visits (default 1000): ").strip() or "1000")
-    daily_limit = int(input("Daily limit (default 3): ").strip() or "3")
+
+    while True:
+        visits_input = input("Total visits (default 1000): ").strip() or "1000"
+        try:
+            visits = int(visits_input)
+            if visits > 0:
+                break
+            print("Visits must be a positive number.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+    while True:
+        daily_input = input("Daily limit (default 3): ").strip() or "3"
+        try:
+            daily_limit = int(daily_input)
+            if daily_limit > 0:
+                break
+            print("Daily limit must be a positive number.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
 
     # Geolocation
     print("\n📍 Geolocation Settings:")
-    lat = float(input("  Latitude: ").strip())
-    lon = float(input("  Longitude: ").strip())
-    radius = float(input("  Radius in miles (default 1.0): ").strip() or "1.0")
-    geo_count = int(input("  Number of geo points (default 75): ").strip() or "75")
+
+    while True:
+        lat_input = input("  Latitude: ").strip()
+        try:
+            lat = float(lat_input)
+            if -90 <= lat <= 90:
+                break
+            print("Latitude must be between -90 and 90.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+    while True:
+        lon_input = input("  Longitude: ").strip()
+        try:
+            lon = float(lon_input)
+            if -180 <= lon <= 180:
+                break
+            print("Longitude must be between -180 and 180.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+    while True:
+        radius_input = input("  Radius in miles (default 1.0): ").strip() or "1.0"
+        try:
+            radius = float(radius_input)
+            if radius > 0:
+                break
+            print("Radius must be a positive number.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+    while True:
+        geo_input = input("  Number of geo points (default 75): ").strip() or "75"
+        try:
+            geo_count = int(geo_input)
+            if geo_count > 0:
+                break
+            print("Number of geo points must be a positive number.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
 
     # URLs/Keywords
     print("\n🔗 Target Sites (comma-separated, or press Enter to skip):")
@@ -597,12 +689,14 @@ def create_campaign_interactive() -> Dict[str, Any]:
     keywords = [k.strip() for k in keywords_input.split(",")] if keywords_input else []
 
     # Build campaign
-    builder = (CampaignBuilder(campaign_type)
-               .set_project_name(project_name)
-               .set_visits(visits, daily_limit)
-               .set_geolocation(lat, lon, radius, geo_count)
-               .set_target_sites(sites)
-               .set_keywords(keywords))
+    builder = (
+        CampaignBuilder(campaign_type)
+        .set_project_name(project_name)
+        .set_visits(visits, daily_limit)
+        .set_geolocation(lat, lon, radius, geo_count)
+        .set_target_sites(sites)
+        .set_keywords(keywords)
+    )
 
     return builder.build()
 
@@ -637,7 +731,9 @@ def main():
             # View campaigns
             print(f"\n📊 Total Campaigns: {len(manager.campaigns)}")
             for i, campaign in enumerate(manager.campaigns[:10], 1):
-                print(f"  {i}. [{campaign['Type']}] {campaign['ProjectName']} (ID: {campaign['id']})")
+                print(
+                    f"  {i}. [{campaign['Type']}] {campaign['ProjectName']} (ID: {campaign['id']})"
+                )
             if len(manager.campaigns) > 10:
                 print(f"  ... and {len(manager.campaigns) - 10} more")
 
@@ -685,7 +781,7 @@ def main():
             print(f"  Total Campaigns: {stats['total_campaigns']}")
             print(f"  Total Planned Visits: {stats['total_planned_visits']:,}")
             print("\n  Campaign Types:")
-            for ctype, count in stats['campaign_types'].items():
+            for ctype, count in stats["campaign_types"].items():
                 print(f"    • {ctype}: {count}")
 
         elif choice == "8":
@@ -702,27 +798,29 @@ def main():
             for i in range(count):
                 if template_choice == "1":
                     campaign = QuickTemplates.gsearch_brand(
-                        f"Campaign {i+1}",
-                        40.7128, -74.0060,  # NYC
-                        ["brand keyword"]
+                        f"Campaign {i + 1}",
+                        40.7128,
+                        -74.0060,  # NYC
+                        ["brand keyword"],
                     )
                 elif template_choice == "2":
                     campaign = QuickTemplates.gmap_local(
-                        f"Campaign {i+1}",
-                        40.7128, -74.0060,
-                        ["https://maps.google.com/..."]
+                        f"Campaign {i + 1}",
+                        40.7128,
+                        -74.0060,
+                        ["https://maps.google.com/..."],
                     )
                 elif template_choice == "3":
                     campaign = QuickTemplates.referal_visit(
-                        f"Campaign {i+1}",
-                        40.7128, -74.0060,
+                        f"Campaign {i + 1}",
+                        40.7128,
+                        -74.0060,
                         ["https://example.com"],
-                        ["tel:+1234567890"]
+                        ["tel:+1234567890"],
                     )
                 else:
                     campaign = QuickTemplates.direct_visit(
-                        f"Campaign {i+1}",
-                        "https://example.com"
+                        f"Campaign {i + 1}", "https://example.com"
                     )
                 manager.add_campaign(campaign)
 

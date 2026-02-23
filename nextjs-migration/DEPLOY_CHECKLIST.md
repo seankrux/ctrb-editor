@@ -112,10 +112,11 @@ vercel
 <Image src="/logo.png" alt="Logo" width={150} height={50} />
 ```
 
-### Configure AI
-Add environment variable in Vercel:
-- Name: `OPENAI_API_KEY`
-- Value: `sk-your-key-here`
+### Configure Runtime Variables (If Needed)
+No environment variables are required for the current deployment shell.
+
+If you add integrations later, update `nextjs-migration/.env.example` first and then
+set those values in Vercel.
 
 ### Custom Domain
 1. Vercel Dashboard → Settings → Domains

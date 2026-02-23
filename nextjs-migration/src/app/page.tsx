@@ -1,11 +1,10 @@
-import NebulaBackground from '@/components/NebulaBackground';
 import ThemeToggle from '@/components/ThemeToggle';
+import { runtimeConfig } from '@/lib/runtime-config';
 
 export default function HomePage() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-background to-background-light p-6 text-slate-100">
-      <NebulaBackground />
-      <section className="relative mx-auto flex max-w-4xl flex-col gap-6 rounded-2xl border border-primary-500/30 bg-surface/80 p-8 backdrop-blur">
+    <main className="min-h-screen bg-slate-950 p-6 text-slate-100">
+      <section className="mx-auto flex w-full max-w-4xl flex-col gap-6 rounded-2xl border border-primary-500/30 bg-slate-900/80 p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="mb-2 inline-flex rounded-full bg-primary-500/20 px-3 py-1 text-xs font-medium text-primary-200">
@@ -13,15 +12,18 @@ export default function HomePage() {
             </p>
             <h1 className="text-3xl font-bold">CTRBooster Nebula</h1>
             <p className="mt-2 text-sm text-slate-300">
-              Clean, production-focused entrypoint is now mounted and ready for use.
+              Production-safe shell route is live and ready for incremental feature migration.
             </p>
           </div>
           <ThemeToggle />
         </div>
 
         <p className="text-sm text-slate-300">
-          You can start migrating campaign workflows from this page and wire tools/API
-          integration into this shell.
+          Legacy demo visuals were removed to keep the deployment footprint small and
+          deterministic.
+        </p>
+        <p className="text-xs text-slate-400">
+          API base URL: <code>{runtimeConfig.apiBaseUrl}</code>
         </p>
 
         <a

@@ -1,18 +1,16 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useThemeStore } from '@/store';
+import { useEffect, type ReactNode } from 'react';
+import { applyTheme, resolveInitialTheme } from '@/lib/theme';
 
 export default function ClientThemeSync({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
-  const isDark = useThemeStore((state) => state.isDark);
-
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', isDark);
-  }, [isDark]);
+    applyTheme(resolveInitialTheme());
+  }, []);
 
   return <>{children}</>;
 }

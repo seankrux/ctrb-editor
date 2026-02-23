@@ -174,10 +174,12 @@ vercel
 3. Import your GitHub repository
 4. Click "Deploy"
 
-### 3. Environment Variables (if using AI)
+### 3. Environment Variables
 
-In Vercel dashboard, add:
-- `OPENAI_API_KEY` - Your OpenAI API key (optional)
+No production environment variables are required for the current deployment target.
+
+Use `nextjs-migration/.env.example` as the source of truth for optional local/test
+variables.
 
 ---
 

@@ -1,4 +1,11 @@
 // CTRBooster AI - Background Service Worker
+//
+// SECURITY NOTE: API keys stored in chrome.storage.local are NOT encrypted.
+// This is acceptable for user-provided keys in a local extension context.
+// For production use with sensitive keys, consider:
+// - Using chrome.storage.sync with OS-level encryption
+// - Prompting for the key each session instead of persisting
+// - Using a backend proxy service to keep keys server-side
 
 // Listen for installation
 chrome.runtime.onInstalled.addListener((details) => {
