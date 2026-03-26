@@ -1,0 +1,26 @@
+{
+  "name": "ctrb-pleper-mcp",
+  "version": "1.0.0",
+  "description": "MCP server: lookup GMB brand CID + nearby location CIDs via Pleper API",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "ctrb-pleper-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "node --loader ts-node/esm src/index.ts",
+    "start": "node dist/index.js",
+    "test": "node --loader ts-node/esm src/test.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "axios": "^1.7.9",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTR Booster: Campaign Manager Pro</title>
+    <!-- 
+        CTR Booster Campaign Manager
+        Version: 2.0.0
+        Description: A high-fidelity management tool for CTR Booster backup files (.json).
+        Architecture: Vanilla JS, CSS3, Semantic HTML5. No external dependencies.
+    -->
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Base Reset */
+        * { box-sizing: border-box; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        body { background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+        /* Typography */
+        h1, h2, h3 { margin: 0; }
+        label { cursor: pointer; }
+
+        /* Layout Components */
+        header { 
+            background: #0f172a; 
+            color: white; 
+            padding: 0.75rem 2rem; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
+            z-index: 50;
+        }
+
+        .toolbar { 
+            padding: 1rem 2rem; 
+            background: white; 
+            border-bottom: 1px solid var(--border); 
+            display: flex; 
+            gap: 1rem; 
+            align-items: center; 
+            flex-wrap: wrap; 
+            z-index: 40;
+        }
+        
+        main { flex: 1; overflow: auto; padding: 1.5rem 2rem; }
+        
+        /* Table Styles */
+        .table-container { background: white; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        th { 
+            background: #f8fafc; 
+            text-align: left; 
+            padding: 14px; 
+            font-weight: 600; 
+            font-size: 0.75rem; 
+            text-transform: uppercase; 
+            letter-spacing: 0.05em; 
+            color: var(--text-muted); 
+            border-bottom: 2px solid var(--border); 
+            position: sticky; 
+            top: 0; 
+            z-index: 10; 
+        }
+        td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 0.875rem; vertical-align: middle; }
+        tr:hover td { background: #f8fafc; }
+
+        /* Form & Buttons */
+        .btn { 
+            padding: 8px 16px; 
+            border-radius: 8px; 
+            border: 1px solid transparent; 
+            cursor: pointer; 
+            font-weight: 500; 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 8px; 
+            font-size: 0.875rem; 
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        .btn-secondary { background: white; border-color: var(--border); color: var(--text); }
+        .btn-secondary:hover { background: #f8fafc; }
+        .btn-danger { background: #fef2f2; color: var(--danger); border-color: #fee2e2; }
+        .btn-danger:hover { background: var(--danger); color: white; }
+        .btn-outline { border: 1px solid rgba(255,255,255,0.2); background: transparent; color: white; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+        .search-box { 
+            flex: 1; 
+            min-width: 300px; 
+            padding: 10px 16px; 
+            border: 1px solid var(--border); 
+            border-radius: 8px; 
+            outline: none; 
+            transition: all 0.2s; 
+            font-size: 0.95rem; 
+        }
+        .search-box:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+        /* Badges & Progress */
+        .badge { padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+        .badge-searchengine { background: #dbeafe; color: #1e40af; }
+        .badge-gmb { background: #fef3c7; color: #92400e; }
+        .badge-refdvisit { background: #dcfce7; color: #166534; }
+        .badge-default { background: #f1f5f9; color: #475569; }
+
+        .progress-container { width: 140px; height: 8px; background: #e2e8f0; border-radius: 10px; overflow: hidden; position: relative; }
+        .progress-bar { height: 100%; background: var(--primary); border-radius: 10px; transition: width 0.5s ease; }
+        .progress-text { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; display: block; font-weight: 500; }
+
+        /* Modal & Tabs System */
+        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+        .modal-content { background: white; width: 95%; max-width: 1150px; height: 85vh; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid var(--border); }
+        .modal-header { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
+        
+        .modal-tabs { display: flex; background: #f8fafc; border-bottom: 1px solid var(--border); padding: 0 2rem; overflow-x: auto; scrollbar-width: none; }
+        .modal-tabs::-webkit-scrollbar { display: none; }
+        .tab { padding: 1rem 1.5rem; cursor: pointer; border-bottom: 2px solid transparent; font-size: 0.875rem; font-weight: 600; color: var(--text-muted); transition: all 0.2s; white-space: nowrap; }
+        .tab:hover { color: var(--primary); background: rgba(37,99,235,0.05); }
+        .tab.active { border-bottom-color: var(--primary); color: var(--primary); background: white; }
+
+        .modal-body { flex: 1; overflow-y: auto; padding: 2rem; background: #fff; }
+        .tab-content { display: none; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem; }
+        .tab-content.active { display: grid; }
+
+        .modal-footer { padding: 1.25rem 2rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 1rem; background: #f8fafc; }
+
+        /* Form Controls */
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 0.75rem; font-weight: 700; color: #475569; letter-spacing: 0.025em; margin-bottom: 4px; }
+        .form-group input, .form-group select, .form-group textarea { 
+            padding: 10px 12px; 
+            border: 1px solid var(--border); 
+            border-radius: 8px; 
+            font-size: 0.9rem; 
+            transition: all 0.2s; 
+            width: 100%; 
+            background: #fff;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { 
+            border-color: var(--primary); 
+            outline: none; 
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1); 
+        }
+        .form-group.full-width { grid-column: 1 / -1; }
+
+        /* Loading States */
+        .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.85); display: none; justify-content: center; align-items: center; z-index: 1000; flex-direction: column; gap: 15px; backdrop-filter: blur(2px); }
+        .spinner { width: 48px; height: 48px; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Utilities */
+        .u-monospace { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+        .u-bold { font-weight: 700; }
+    </style>
+</head>
+<body>
+
+    <!-- Global Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <div style="font-weight: 700; color: var(--primary); font-size: 1.1rem;">Synchronizing Workflow Data...</div>
+    </div>
+
+    <!-- Application Header -->
+    <header>
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div style="background: var(--primary); color: white; padding: 6px 12px; border-radius: 8px; font-weight: 800; letter-spacing: -0.5px; box-shadow: 0 2px 4px rgba(37,99,235,0.3);">CTR-B</div>
+            <div>
+                <h1 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #f8fafc;">Campaign Manager Pro</h1>
+                <div id="globalStats" style="color: rgba(255,255,255,0.5); font-size: 0.75rem; font-weight: 600; margin-top: 2px;">READY TO IMPORT</div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <input type="file" id="fileInput" multiple style="display: none;" accept=".json">
+            <button class="btn btn-outline" onclick="document.getElementById('fileInput').click()">Import Backups</button>
+            <button class="btn btn-primary" id="exportBtn">Export Selected</button>
+        </div>
+    </header>
+
+    <!-- Contextual Toolbar -->
+    <div class="toolbar">
+        <input type="text" id="searchInput" class="search-box" placeholder="Filter by Name, ID, or Target URL...">
+        
+        <div style="height: 32px; width: 1px; background: var(--border);"></div>
+        
+        <button class="btn btn-secondary" onclick="CTRManager.UI.openModal()">+ New Campaign</button>
+        <button class="btn btn-secondary" id="bulkEditBtn" disabled>Bulk Edit</button>
+        <button class="btn btn-danger" id="bulkDeleteBtn" disabled>Delete</button>
+    </div>
+
+    <!-- Main Workspace -->
+    <main>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 45px;"><input type="checkbox" id="selectAll"></th>
+                        <th>Campaign Identification</th>
+                        <th>Method</th>
+                        <th>Target Destination</th>
+                        <th>Execution Progress</th>
+                        <th>Schedule</th>
+                        <th style="width: 80px; text-align: center;">Task</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- SOP-Aligned Configuration Modal -->
+    <div id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 id="modalTitle" style="margin: 0; font-size: 1.25rem; font-weight: 800;">Configure Campaign</h2>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-top: 4px;">SOP PHASE 1: PARAMETER CALIBRATION</div>
+                </div>
+                <button class="btn btn-secondary" style="padding: 4px 8px; min-width: 0;" onclick="CTRManager.UI.closeModal()">✕</button>
+            </div>
+            
+            <div class="modal-tabs" id="modalTabs">
+                <div class="tab active" data-tab="targeting">🎯 Targeting</div>
+                <div class="tab" data-tab="behavior">🧠 Behavior</div>
+                <div class="tab" data-tab="search">🔍 Search</div>
+                <div class="tab" data-tab="network">🛡️ Evasion</div>
+                <div class="tab" data-tab="geo">📍 Geo</div>
+                <div class="tab" data-tab="advanced">⚙️ System</div>
+            </div>
+
+            <form id="projectForm" class="modal-body">
+                <div class="tab-content active" id="tab-targeting"></div>
+                <div class="tab-content" id="tab-behavior"></div>
+                <div class="tab-content" id="tab-search"></div>
+                <div class="tab-content" id="tab-network"></div>
+                <div class="tab-content" id="tab-geo"></div>
+                <div class="tab-content" id="tab-advanced"></div>
+            </form>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="CTRManager.UI.closeModal()">Discard</button>
+                <button class="btn btn-primary" id="saveBtn" style="min-width: 140px;">Commit Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * CTRManager Core Namespace
+         * Encapsulates all application logic to prevent global scope pollution.
+         */
+        const CTRManager = {
+            // Internal App State
+            State: {
+                projects: [],
+                selectedIds: new Set(),
+                editingId: null,
+                isBulkMode: false
+            },
+
+            // Human-readable labels mapping internal variable names to UI strings
+            Labels: {
+                "ProjectName": "Campaign Name",
+                "Type": "Traffic Type",
+                "TargetUrl": "Target Website URL",
+                "TargetName": "Target Anchor/Business Name",
+                "TargetSearchEngine": "Search Engine",
+                "MatchExactUrl": "Match Exact URL Only",
+                "UseGMBInteraction": "Enable GMB Interaction",
+                "UseKnowdGraphInteraction": "Enable Knowledge Graph",
+                "UsePhoneNumberClick": "Simulate Phone Clicks",
+                "numberOfVisits": "Total Visit Goal",
+                "doneVisits": "Visits Completed",
+                "doneDailyVisits": "Daily Visits Done",
+                "DailyLimit": "Max Daily Limit",
+                "DailyLimitMin": "Min Daily Target",
+                "DailyLimitMax": "Max Daily Target",
+                "TimeOfVisitMin": "Stay Duration Min (sec)",
+                "TimeOfVisitMax": "Stay Duration Max (sec)",
+                "InternalVisitsCount": "Internal Page Clicks",
+                "TimeOfInternalMin": "Internal Stay Min (sec)",
+                "TimeOfInternalMax": "Internal Stay Max (sec)",
+                "MinDelayAfterVisit": "Post-Visit Delay Min (min)",
+                "MaxDelayAfterVisit": "Post-Visit Delay Max (min)",
+                "nextRun": "Next Execution Time",
+                "strGoogleSearchType": "Google Search Method",
+                "lstKeywords": "Search Keywords List",
+                "Keywords": "Active Keywords",
+                "UsedKeywords": "Exhausted Keywords",
+                "TimeinGooglePagesMin": "SERP Browsing Min (sec)",
+                "TimeinGooglePagesMax": "SERP Browsing Max (sec)",
+                "MaxPages": "Max SERP Pages",
+                "VisitCompetitor": "Visit Competitors",
+                "UseCustomProxy": "Use Custom Proxies",
+                "lstUsedProxies": "Used Proxy History",
+                "lstCustomProxies": "Custom Proxy List",
+                "DeviceType": "Primary Device Emulation",
+                "strNextDevice": "Next Device ID",
+                "strMobileUseragentPecentage": "Mobile Traffic %",
+                "strMobileVisits": "Mobile Visit Target",
+                "strDesktopVisits": "Desktop Visit Target",
+                "UseCustomLanguage": "Custom Browser Language",
+                "CustomLanguage": "Language Code (ISO)",
+                "UseGeolocation": "GPS Spoofing",
+                "strMiles": "Spoofing Radius (Miles)",
+                "UseXMiles": "Enable Variable Radius",
+                "lstCustomGeolocations": "Lat/Long Coordinate Pairs",
+                "id": "Internal Project ID",
+                "CreateTime": "Created At",
+                "Filename": "Backup Filename",
+                "Checked": "Selected in UI",
+                "Threads": "Concurrent Threads",
+                "AuthorId": "Account Owner ID",
+                "GMapRetries": "Maps Retry Count",
+                "GMapRetriesFails": "Maps Failure Count",
+                "lstInternalIgnoreLinks": "Ignore URL Patterns",
+                "dtTodayDate": "Last Activity Date",
+                "TimeOfReferrelMin": "Referrer Stay Min (sec)",
+                "TimeOfReferrelMax": "Referrer Stay Max (sec)"
+            },
+
+            // Logical grouping of variables based on SOP phases
+            Groups: {
+                "targeting": ["ProjectName", "Type", "TargetUrl", "TargetName", "TargetSearchEngine", "MatchExactUrl", "UseGMBInteraction", "UseKnowdGraphInteraction", "UsePhoneNumberClick"],
+                "behavior": ["numberOfVisits", "doneVisits", "doneDailyVisits", "DailyLimit", "DailyLimitMin", "DailyLimitMax", "TimeOfVisitMin", "TimeOfVisitMax", "InternalVisitsCount", "TimeOfInternalMin", "TimeOfInternalMax", "MinDelayAfterVisit", "MaxDelayAfterVisit", "nextRun"],
+                "search": ["strGoogleSearchType", "lstKeywords", "Keywords", "UsedKeywords", "TimeinGooglePagesMin", "TimeinGooglePagesMax", "MaxPages", "VisitCompetitor"],
+                "network": ["UseCustomProxy", "lstUsedProxies", "lstCustomProxies", "DeviceType", "strNextDevice", "strMobileUseragentPecentage", "strMobileVisits", "strDesktopVisits", "UseCustomLanguage", "CustomLanguage"],
+                "geo": ["UseGeolocation", "strMiles", "UseXMiles", "lstCustomGeolocations"],
+                "advanced": ["id", "CreateTime", "Filename", "Checked", "Threads", "AuthorId", "GMapRetries", "GMapRetriesFails", "lstInternalIgnoreLinks", "dtTodayDate", "TimeOfReferrelMin", "TimeOfReferrelMax"]
+            },
+
+            // Global test variables for Playwright tests
+            initTestGlobals() {
+                window.SCHEMA_GROUPS = this.Groups;
+                window.LABEL_MAP = this.Labels;
+            },
+
+            // UI Manipulation Logic
+            UI: {
+                /**
+                 * Dynamically generates the configuration form based on schema groups.
+                 */
+                initForm() {
+                    const form = document.getElementById('projectForm');
+                    Object.entries(CTRManager.Groups).forEach(([groupId, keys]) => {
+                        const container = document.getElementById(`tab-${groupId}`);
+                        container.innerHTML = keys.map(key => {
+                            const isBool = key.startsWith('Use') || ['Checked', 'VisitCompetitor', 'MatchExactUrl'].includes(key);
+                            const isArea = ['Keywords', 'lstSites', 'lstCustomGeolocations', 'lstCustomProxies', 'lstUsedProxies', 'lstKeywords', 'lstInternalIgnoreLinks'].includes(key);
+                            const label = CTRManager.Labels[key] || key;
+                            const inputId = `field_${key}`;
+                            
+                            return `
+                                <div class="form-group ${isArea ? 'full-width' : ''}">
+                                    <label for="${inputId}">${label}</label>
+                                    ${isBool ? `
+                                        <select name="${key}" id="${inputId}">
+                                            <option value="">${CTRManager.State.isBulkMode ? '-- No Change --' : '-- Select --'}</option>
+                                            <option value="true">True</option>
+                                            <option value="false">False</option>
+                                        </select>
+                                    ` : isArea ? `
+                                        <textarea name="${key}" id="${inputId}" rows="4" placeholder="One entry per line..."></textarea>
+                                    ` : `
+                                        <input type="text" name="${key}" id="${inputId}" placeholder="${CTRManager.State.isBulkMode ? 'Keep existing value' : ''}">
+                                    `}
+                                </div>
+                            `;
+                        }).join('');
+                    });
+                },
+
+                /**
+                 * Renders the main dashboard table with progress bars and badges.
+                 */
+                renderTable() {
+                    const query = document.getElementById('searchInput').value.toLowerCase();
+                    const filtered = CTRManager.State.projects.filter(p =>
+                        (p.ProjectName || '').toLowerCase().includes(query) ||
+                        (p.id || '').toLowerCase().includes(query) ||
+                        (p.TargetUrl || '').toLowerCase().includes(query)
+                    );
+
+                    const tbody = document.getElementById('tableBody');
+                    tbody.innerHTML = filtered.map(p => {
+                        const done = parseInt(p.doneVisits || 0);
+                        const total = parseInt(p.numberOfVisits || 0);
+                        const percent = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
+                        const type = (p.Type || 'default').toLowerCase();
+
+                        return `
+                            <tr data-id="${p.id}">
+                                <td><input type="checkbox" class="row-select" ${CTRManager.State.selectedIds.has(p.id) ? 'checked' : ''}></td>
+                                <td>
+                                    <div class="u-bold">${p.ProjectName || 'Untitled Campaign'}</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted); font-family: monospace;">ID: ${p.id || 'N/A'}</div>
+                                </td>
+                                <td><span class="badge badge-${type}">${p.Type || 'Unknown'}</span></td>
+                                <td>
+                                    <div style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--primary); font-weight: 600;">${p.TargetUrl || '-'}</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted);">${p.TargetSearchEngine || 'Direct Visit'}</div>
+                                </td>
+                                <td>
+                                    <div class="progress-container"><div class="progress-bar" style="width: ${percent}%"></div></div>
+                                    <span class="progress-text">${done.toLocaleString()} / ${total.toLocaleString()} (${percent}%)</span>
+                                </td>
+                                <td style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">${p.nextRun || '-'}</td>
+                                <td style="text-align: center;">
+                                    <button class="btn btn-secondary edit-btn" style="padding: 6px 12px;" data-id="${p.id}">Edit</button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    lastClickedIndex = null; // Reset shift-click state on re-render
+                    this.updateBulkControls();
+                },
+
+                updateBulkControls() {
+                    const count = CTRManager.State.selectedIds.size;
+                    const bulkEditBtn = document.getElementById('bulkEditBtn');
+                    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+                    
+                    bulkEditBtn.disabled = count === 0;
+                    bulkDeleteBtn.disabled = count === 0;
+                    bulkEditBtn.innerText = `Bulk Edit (${count})`;
+                    
+                    // Update selection count badge in header
+                    const headerStats = document.getElementById('globalStats');
+                    const totalProjects = CTRManager.State.projects.length;
+                    if (count > 0) {
+                        headerStats.innerHTML = `${totalProjects.toLocaleString()} CAMPAIGNS | <span style="color: #86efac; font-weight: 800;">${count.toLocaleString()} SELECTED</span>`;
+                    } else {
+                        const done = CTRManager.State.projects.filter(p => parseInt(p.doneVisits) >= parseInt(p.numberOfVisits) && totalProjects > 0).length;
+                        headerStats.innerText = `${totalProjects.toLocaleString()} CAMPAIGNS DETECTED | ${done.toLocaleString()} GOALS COMPLETED`;
+                    }
+                },
+
+                updateStats() {
+                    const total = CTRManager.State.projects.length;
+                    const done = CTRManager.State.projects.filter(p => parseInt(p.doneVisits) >= parseInt(p.numberOfVisits) && total > 0).length;
+                    document.getElementById('globalStats').innerText = `${total.toLocaleString()} CAMPAIGNS DETECTED | ${done.toLocaleString()} GOALS COMPLETED`;
+                },
+
+                openModal(id = null, bulk = false) {
+                    CTRManager.State.editingId = id;
+                    CTRManager.State.isBulkMode = bulk;
+                    this.initForm();
+                    
+                    const modal = document.getElementById('modal');
+                    const title = document.getElementById('modalTitle');
+                    const form = document.getElementById('projectForm');
+                    
+                    title.innerText = bulk ? `Mass Parameter Update (${CTRManager.State.selectedIds.size} Campaigns)` : (id ? "Campaign Calibration" : "Initialize New Campaign");
+                    form.reset();
+                    
+                    if (id && !bulk) {
+                        const p = CTRManager.State.projects.find(x => x.id === id);
+                        if (p) {
+                            Object.values(CTRManager.Groups).flat().forEach(k => {
+                                const el = form.elements[k];
+                                if (el) {
+                                    const val = p[k];
+                                    el.value = Array.isArray(val) ? val.join('\n') : (val ?? '');
+                                }
+                            });
+                        }
+                    }
+                    modal.style.display = 'flex';
+                },
+
+                closeModal() { document.getElementById('modal').style.display = 'none'; }
+            }
+        };
+
+        /* Event Handlers & Lifecycle */
+
+        // Shift+Click range selection state
+        let lastClickedIndex = null;
+
+        // Tab Switching
+        document.getElementById('modalTabs').onclick = (e) => {
+            const tab = e.target.closest('.tab');
+            if (tab) {
+                // DEBUG: Log tab click
+                console.log(`[TAB DEBUG] Clicked tab:`, tab.dataset.tab);
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+                // DEBUG: Log which tab content is now active
+                console.log(`[TAB DEBUG] Activated tab content: tab-${tab.dataset.tab}`);
+            }
+        };
+
+        // File Import
+        document.getElementById('fileInput').onchange = async (e) => {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.style.display = 'flex';
+            
+            for (const file of e.target.files) {
+                try {
+                    const text = await file.text();
+                    const json = JSON.parse(text);
+                    if (Array.isArray(json)) {
+                        CTRManager.State.projects = [...CTRManager.State.projects, ...json];
+                    }
+                } catch (err) {
+                    console.error("Critical Import Error:", err);
+                    alert(`Failed to parse ${file.name}`);
+                }
+            }
+            
+            CTRManager.UI.renderTable();
+            CTRManager.UI.updateStats();
+            overlay.style.display = 'none';
+        };
+
+        // Table Delegated Actions
+        document.getElementById('tableBody').onclick = (e) => {
+            const id = e.target.closest('tr')?.dataset.id;
+            if (e.target.classList.contains('edit-btn')) CTRManager.UI.openModal(id);
+            if (e.target.classList.contains('row-select')) {
+                const checkboxes = document.querySelectorAll('.row-select');
+                const currentIndex = Array.from(checkboxes).findIndex(cb => cb.closest('tr').dataset.id === id);
+                
+                // Handle Shift+Click range selection
+                if (e.shiftKey && lastClickedIndex !== null) {
+                    const start = Math.min(lastClickedIndex, currentIndex);
+                    const end = Math.max(lastClickedIndex, currentIndex);
+                    const shouldCheck = checkboxes[lastClickedIndex].checked;
+                    
+                    for (let i = start; i <= end; i++) {
+                        const cb = checkboxes[i];
+                        const rowId = cb.closest('tr').dataset.id;
+                        cb.checked = shouldCheck;
+                        if (shouldCheck) {
+                            CTRManager.State.selectedIds.add(rowId);
+                        } else {
+                            CTRManager.State.selectedIds.delete(rowId);
+                        }
+                    }
+                } else {
+                    // Normal toggle
+                    if (CTRManager.State.selectedIds.has(id)) {
+                        CTRManager.State.selectedIds.delete(id);
+                    } else {
+                        CTRManager.State.selectedIds.add(id);
+                    }
+                }
+                
+                lastClickedIndex = currentIndex;
+                CTRManager.UI.updateBulkControls();
+            }
+        };
+
+        // Select All Toggle
+        document.getElementById('selectAll').onchange = (e) => {
+            const isChecked = e.target.checked;
+            lastClickedIndex = null; // Reset shift-click state
+            // DEBUG: Log selectAll change
+            console.log(`[SELECT DEBUG] selectAll changed to: ${isChecked}`);
+            document.querySelectorAll('.row-select').forEach(cb => {
+                const id = cb.closest('tr').dataset.id;
+                cb.checked = isChecked;
+                if (isChecked) {
+                    CTRManager.State.selectedIds.add(id);
+                    console.log(`[SELECT DEBUG] Added ID: ${id}`);
+                } else {
+                    CTRManager.State.selectedIds.delete(id);
+                    console.log(`[SELECT DEBUG] Removed ID: ${id}`);
+                }
+            });
+            console.log(`[SELECT DEBUG] Total selected: ${CTRManager.State.selectedIds.size}`);
+            CTRManager.UI.updateBulkControls();
+        };
+
+        // Search Input
+        document.getElementById('searchInput').oninput = () => CTRManager.UI.renderTable();
+
+        // Save Logic
+        document.getElementById('saveBtn').onclick = () => {
+            // DEBUG: Log save button click
+            console.log(`[SAVE DEBUG] Save clicked, isBulkMode: ${CTRManager.State.isBulkMode}`);
+            const form = document.getElementById('projectForm');
+            const changes = {};
+            const keys = Object.values(CTRManager.Groups).flat();
+            const listFields = ['Keywords', 'lstSites', 'lstCustomGeolocations', 'lstCustomProxies', 'lstUsedProxies', 'lstKeywords', 'lstInternalIgnoreLinks'];
+
+            keys.forEach(k => {
+                const el = form.elements[k];
+                if (!el) return;
+                
+                let val = el.value;
+                // DEBUG: Log field values being captured
+                console.log(`[BULK DEBUG] Field: ${k}, Value: "${val}", isBulkMode: ${CTRManager.State.isBulkMode}`);
+                // In bulk mode, skip empty fields
+                if (CTRManager.State.isBulkMode && (val === '' || (el.tagName === 'SELECT' && val === ''))) return;
+
+                if (listFields.includes(k)) {
+                    val = val ? val.split('\n').map(l => l.trim()).filter(l => l !== '') : [];
+                } else if (val === 'true') val = true;
+                else if (val === 'false') val = false;
+                
+                changes[k] = val;
+            });
+
+            if (CTRManager.State.isBulkMode) {
+                CTRManager.State.projects = CTRManager.State.projects.map(p => 
+                    CTRManager.State.selectedIds.has(p.id) ? { ...p, ...changes } : p
+                );
+            } else if (CTRManager.State.editingId) {
+                const idx = CTRManager.State.projects.findIndex(x => x.id === CTRManager.State.editingId);
+                CTRManager.State.projects[idx] = { ...CTRManager.State.projects[idx], ...changes };
+            } else {
+                const newP = { ...changes };
+                if (!newP.id) newP.id = Math.floor(Math.random() * 1e10).toString();
+                CTRManager.State.projects.push(newP);
+            }
+
+            CTRManager.UI.renderTable();
+            CTRManager.UI.updateStats();
+            CTRManager.UI.closeModal();
+        };
+
+        // Bulk Actions
+        document.getElementById('bulkEditBtn').onclick = () => CTRManager.UI.openModal(null, true);
+        document.getElementById('bulkDeleteBtn').onclick = () => {
+            // DEBUG: Log bulk delete click
+            console.log(`[BULK DEBUG] Bulk delete called with ${CTRManager.State.selectedIds.size} selected projects.`);
+            if (confirm(`PERMANENT DELETION: Are you sure you want to remove ${CTRManager.State.selectedIds.size} campaigns?`)) {
+                CTRManager.State.projects = CTRManager.State.projects.filter(p => !CTRManager.State.selectedIds.has(p.id));
+                CTRManager.State.selectedIds.clear();
+                CTRManager.UI.renderTable();
+                CTRManager.UI.updateStats();
+            }
+        };
+
+        // Export System
+        document.getElementById('exportBtn').onclick = () => {
+            const data = CTRManager.State.selectedIds.size > 0 
+                ? CTRManager.State.projects.filter(p => CTRManager.State.selectedIds.has(p.id)) 
+                : CTRManager.State.projects;
+            
+            if (!data.length) return alert("No campaign data available for export.");
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ctrb_export_${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        // Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            CTRManager.initTestGlobals();
+            CTRManager.UI.initForm();
+            CTRManager.UI.updateStats();
+        });
+    </script>
+</body>
+</html>

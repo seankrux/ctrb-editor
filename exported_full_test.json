@@ -1,0 +1,84 @@
+[
+  {
+    "strGoogleSearchType": "TEST_strGoogleSearchType",
+    "strMiles": "TEST_strMiles",
+    "UseXMiles": true,
+    "UseGeolocation": true,
+    "strNextDevice": "TEST_strNextDevice",
+    "AuthorId": "TEST_AuthorId",
+    "MatchExactUrl": true,
+    "id": "3730352327",
+    "Checked": true,
+    "UseCustomProxy": true,
+    "UseGMBInteraction": true,
+    "UseKnowdGraphInteraction": true,
+    "UsePhoneNumberClick": true,
+    "ProjectName": "FULLY_REVISED_PROJECT",
+    "Type": "TEST_Type",
+    "numberOfVisits": "TEST_numberOfVisits",
+    "doneVisits": "TEST_doneVisits",
+    "doneDailyVisits": "TEST_doneDailyVisits",
+    "TimeOfVisitMin": "TEST_TimeOfVisitMin",
+    "TimeOfVisitMax": "TEST_TimeOfVisitMax",
+    "InternalVisitsCount": "TEST_InternalVisitsCount",
+    "TimeOfInternalMin": "TEST_TimeOfInternalMin",
+    "TimeOfInternalMax": "TEST_TimeOfInternalMax",
+    "TimeOfReferrelMin": "TEST_TimeOfReferrelMin",
+    "TimeOfReferrelMax": "TEST_TimeOfReferrelMax",
+    "Threads": "TEST_Threads",
+    "TimeinGooglePagesMin": "TEST_TimeinGooglePagesMin",
+    "TimeinGooglePagesMax": "TEST_TimeinGooglePagesMax",
+    "MaxPages": "TEST_MaxPages",
+    "TargetSearchEngine": "TEST_TargetSearchEngine",
+    "TargetUrl": "TEST_TargetUrl",
+    "TargetName": "TEST_TargetName",
+    "CreateTime": "TEST_CreateTime",
+    "lstUsedProxies": [
+      "LINE1",
+      "LINE2"
+    ],
+    "lstCustomProxies": [
+      "LINE1",
+      "LINE2"
+    ],
+    "lstCustomGeolocations": [
+      "LINE1",
+      "LINE2"
+    ],
+    "lstKeywords": [
+      "LINE1",
+      "LINE2"
+    ],
+    "lstSites": [
+      "www.test.com"
+    ],
+    "lstInternalIgnoreLinks": [
+      "LINE1",
+      "LINE2"
+    ],
+    "GMapRetries": "TEST_GMapRetries",
+    "GMapRetriesFails": "TEST_GMapRetriesFails",
+    "DailyLimit": "TEST_DailyLimit",
+    "DailyLimitMin": "TEST_DailyLimitMin",
+    "DailyLimitMax": "TEST_DailyLimitMax",
+    "dtTodayDate": "TEST_dtTodayDate",
+    "MinDelayAfterVisit": "TEST_MinDelayAfterVisit",
+    "MaxDelayAfterVisit": "TEST_MaxDelayAfterVisit",
+    "DeviceType": "TEST_DeviceType",
+    "VisitCompetitor": true,
+    "strStartTime": "10:00 AM",
+    "strEndTime": "09:00 PM",
+    "strMobileUseragentPecentage": "TEST_strMobileUseragentPecentage",
+    "strMobileVisits": "TEST_strMobileVisits",
+    "strDesktopVisits": "TEST_strDesktopVisits",
+    "Keywords": [
+      "LINE1",
+      "LINE2"
+    ],
+    "UsedKeywords": true,
+    "Filename": "TEST_Filename",
+    "nextRun": "TEST_nextRun",
+    "UseCustomLanguage": true,
+    "CustomLanguage": "TEST_CustomLanguage"
+  }
+]
