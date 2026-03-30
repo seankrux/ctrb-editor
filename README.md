@@ -464,3 +464,7 @@ jq 'length' backup.json
 **Made with ❤️ for CTRBooster users**
 
 For questions or issues, refer to the complete guide: [CAMPAIGN_EDITOR_GUIDE.md](./CAMPAIGN_EDITOR_GUIDE.md)
+
+---
+
+Made with 💛 by Sean G
