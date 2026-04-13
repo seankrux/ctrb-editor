@@ -540,7 +540,6 @@ const app = {
         this.boundStopResize = () => this.stopResize();
     },
 
-    // ========== STORAGE ==========
     loadFromStorage() {
         try {
             const saved = localStorage.getItem('ctrb_v5_campaigns');
@@ -567,7 +566,6 @@ const app = {
         }, 750);
     },
 
-    // ========== HISTORY (UNDO) ==========
     saveHistory() {
         this.historyIndex++;
         this.history = this.history.slice(0, this.historyIndex);
@@ -601,7 +599,6 @@ const app = {
         }
     },
 
-    // ========== RENDER SPREADSHEET ==========
     renderSpreadsheet() {
         this.renderHeader();
         this.renderBody();
@@ -714,7 +711,6 @@ const app = {
         return `<td class="editable-cell"><input type="text" value="${this.escHtml(String(value ?? ''))}" onchange="app.updateCell('${campaign.id}', '${field}', this.value)" onfocus="this.select()"></td>`;
     },
 
-    // ========== CELL UPDATES ==========
     updateCell(campaignId, field, value) {
         const campaign = this.campaigns.find(c => c.id === campaignId);
         if (!campaign) return;
@@ -738,7 +734,6 @@ const app = {
         this.updateStatusBar(`Updated ${this.formatFieldName(field)} (${arrayValue.length} items)`);
     },
 
-    // ========== SELECTION ==========
     toggleSelect(campaignId, event) {
         if (event && event.shiftKey && this.lastClickedId) {
             // Range selection
@@ -782,7 +777,6 @@ const app = {
         this.updateBulkIndicator();
     },
 
-    // ========== SORTING ==========
     sortByColumn(column) {
         if (this.sortColumn === column) {
             this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
@@ -824,7 +818,6 @@ const app = {
         this.updateStatusBar(`Sorted by ${this.formatFieldName(column)} (${this.sortDirection})`);
     },
 
-    // ========== COLUMN RESIZE ==========
     startResize(event, column) {
         event.stopPropagation(); // Prevent sort when clicking resize handle
         this.isResizing = true;
@@ -872,7 +865,6 @@ const app = {
         indicator.style.display = this.selectedIds.size > 0 ? 'block' : 'none';
     },
 
-    // ========== FILTERING ==========
     filterSpreadsheet() {
         const search = document.getElementById('search-input').value.toLowerCase();
         const typeFilter = document.getElementById('type-filter').value;
@@ -888,7 +880,6 @@ const app = {
         this.renderBody();
     },
 
-    // ========== BULK EDIT ==========
     toggleBulkEdit() {
         const panel = document.getElementById('bulk-edit-panel');
         const fields = document.getElementById('bulk-edit-fields');
@@ -993,7 +984,6 @@ const app = {
         });
     },
 
-    // ========== ACTIONS ==========
     bulkCreateCampaigns() {
         const urlsText = document.getElementById('bulk-urls').value.trim();
         if (!urlsText) {
@@ -1203,7 +1193,6 @@ const app = {
         this.showToast('All changes saved', 'success');
     },
 
-    // ========== IMPORT/EXPORT ==========
     handleFileImport(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -1242,7 +1231,6 @@ const app = {
         this.showToast('Export complete', 'success');
     },
 
-    // ========== COLUMN PICKER ==========
     addColumnPicker() {
         const dropdown = document.getElementById('column-dropdown');
         const allFields = Object.values(this.fieldGroups).flat();
@@ -1279,7 +1267,6 @@ const app = {
         this.showToast('Columns updated', 'success');
     },
 
-    // ========== UTILITIES ==========
     clearTimingFields(campaign) {
         campaign.TimeOfVisitMin        = '';
         campaign.TimeOfVisitMax        = '';
@@ -1326,7 +1313,7 @@ const app = {
             AuthorId: '',
             Checked: true,
             numberOfVisits: visits,
-            doneVisits: ,
+            doneVisits: `0 of ${visits}`,
             DailyLimit: '3',
             DailyLimitMin: '1',
             DailyLimitMax: '0',
@@ -1360,7 +1347,7 @@ const app = {
             strNextDevice: 'Desktop',
             strMobileUseragentPecentage: '0',
             strMobileVisits: '0 of 0',
-            strDesktopVisits: ,
+            strDesktopVisits: `0 of ${visits}`,
             Threads: '',
             UseCustomProxy: false,
             lstCustomProxies: [],
@@ -1379,7 +1366,7 @@ const app = {
             lstInternalIgnoreLinks: [],
             UseCustomLanguage: false,
             CustomLanguage: '',
-            Filename: ,
+            Filename: `${Math.floor(Math.random() * 900000000) + 100000000}-${Math.floor(Math.random() * 900000000) + 100000000}`,
         };
     },
 
