@@ -1,7 +1,19 @@
 {
-  "version": 2,
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "installCommand": "cd nextjs-migration && npm install",
   "buildCommand": "cd nextjs-migration && npm run build",
-  "installCommand": "cd nextjs-migration && npm ci",
-  "devCommand": "cd nextjs-migration && npm run dev",
-  "outputDirectory": "nextjs-migration/.next"
+  "outputDirectory": "nextjs-migration/.next",
+  "regions": ["iad1"],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ]
 }
