@@ -460,6 +460,14 @@ roof repair<br>
  */
 
 // Configuration constants
+const CAMPAIGN_TYPE_DEFAULTS = {
+    GSearch:     { TimeinGooglePagesMin: "15", TimeinGooglePagesMax: "45", MaxPages: "3", TargetSearchEngine: "www.google.com", TimeOfReferrelMin: "0",  TimeOfReferrelMax: "0",  UseGeolocation: true  },
+    GMap:        { TimeinGooglePagesMin: "10", TimeinGooglePagesMax: "30", MaxPages: "0", TargetSearchEngine: "",               TimeOfReferrelMin: "30", TimeOfReferrelMax: "90", UseGeolocation: true  },
+    RefDVisit:   { TimeinGooglePagesMin: "0",  TimeinGooglePagesMax: "0",  MaxPages: "0", TargetSearchEngine: "",               TimeOfReferrelMin: "30", TimeOfReferrelMax: "90", UseGeolocation: true  },
+    GSearchRef:  { TimeinGooglePagesMin: "20", TimeinGooglePagesMax: "60", MaxPages: "2", TargetSearchEngine: "www.google.com", TimeOfReferrelMin: "30", TimeOfReferrelMax: "90", UseGeolocation: true  },
+    DirectVisit: { TimeinGooglePagesMin: "0",  TimeinGooglePagesMax: "0",  MaxPages: "0", TargetSearchEngine: "",               TimeOfReferrelMin: "0",  TimeOfReferrelMax: "0",  UseGeolocation: false }
+};
+
 const CONFIG = {
     DEFAULTS: {
         DAILY_LIMIT: 3,
@@ -548,12 +556,15 @@ const app = {
     },
 
     saveToStorage() {
-        try {
-            localStorage.setItem('ctrb_v5_campaigns', JSON.stringify(this.campaigns));
-        } catch (e) {
-            console.error('Failed to save:', e);
-            this.showToast('Failed to save to localStorage', 'error');
-        }
+        clearTimeout(this._saveTimer);
+        this._saveTimer = setTimeout(() => {
+            try {
+                localStorage.setItem('ctrb_v5_campaigns', JSON.stringify(this.campaigns));
+            } catch (e) {
+                console.error('Failed to save:', e);
+                this.showToast('Failed to save to localStorage', 'error');
+            }
+        }, 750);
     },
 
     // ========== HISTORY (UNDO) ==========
@@ -567,13 +578,25 @@ const app = {
         }
     },
 
+    commitEdit() {
+        const snapshot = JSON.stringify(this.campaigns);
+        try { localStorage.setItem('ctrb_v5_campaigns', snapshot); } catch (e) { /* quota */ }
+        this.history = this.history.slice(0, this.historyIndex + 1);
+        this.history.push(snapshot);
+        this.historyIndex = this.history.length - 1;
+        if (this.history.length > CONFIG.MAX_HISTORY) {
+            this.history.shift();
+            this.historyIndex--;
+        }
+    },
+
     undoChanges() {
         if (this.historyIndex > 0) {
             this.historyIndex--;
             this.campaigns = JSON.parse(this.history[this.historyIndex]);
             this.filteredCampaigns = [...this.campaigns];
             this.saveToStorage();
-            this.renderSpreadsheet();
+            this.renderData();
             this.showToast('Undo successful', 'info');
         }
     },
@@ -581,6 +604,11 @@ const app = {
     // ========== RENDER SPREADSHEET ==========
     renderSpreadsheet() {
         this.renderHeader();
+        this.renderBody();
+        this.updateStatusBar();
+    },
+
+    renderData() {
         this.renderBody();
         this.updateStatusBar();
     },
@@ -694,8 +722,7 @@ const app = {
         const oldValue = campaign[field];
         campaign[field] = value;
         
-        this.saveToStorage();
-        this.saveHistory();
+        this.commitEdit();
         this.updateStatusBar(`Updated ${this.formatFieldName(field)}`);
     },
 
@@ -707,8 +734,7 @@ const app = {
         const arrayValue = textValue.split('\n').map(line => line.trim()).filter(line => line.length > 0);
         campaign[field] = arrayValue;
         
-        this.saveToStorage();
-        this.saveHistory();
+        this.commitEdit();
         this.updateStatusBar(`Updated ${this.formatFieldName(field)} (${arrayValue.length} items)`);
     },
 
@@ -955,7 +981,7 @@ const app = {
         });
         
         this.saveToStorage();
-        this.renderSpreadsheet();
+        this.renderData();
         this.toggleBulkEdit();
         this.selectedIds.clear();
         this.showToast(`Updated ${updated} field(s) across ${this.selectedIds.size} campaign(s)`, 'success');
@@ -1002,53 +1028,20 @@ const app = {
         this.saveHistory();
         const newCampaigns = [];
 
+        const bulkOpts = { dailyLimit, totalVisits, campaignType, useGeo, useProxy, deviceType, startTime, endTime, keywords };
         urls.forEach(url => {
             const campaign = this.generateCampaign(campaignType);
             campaign.ProjectName = url;
-            campaign.TargetUrl = url;
-            campaign.TargetName = url;
-            campaign.Type = campaignType;
-            campaign.DailyLimit = dailyLimit;
-            campaign.numberOfVisits = totalVisits;
-            campaign.doneVisits = `0 of ${totalVisits}`;
-            campaign.doneDailyVisits = '0 of 1';
-            campaign.UseGeolocation = useGeo;
-            campaign.UseCustomProxy = useProxy;
-            campaign.DeviceType = deviceType;
-            campaign.strNextDevice = deviceType;
-            campaign.strStartTime = startTime;
-            campaign.strEndTime = endTime;
-
-            // Add keywords if provided
-            if (keywords.length > 0) {
-                campaign.Keywords = [...keywords];
-                campaign.lstKeywords = [...keywords];
-            }
-
-            // For DirectVisit, disable geolocation by default
-            if (campaignType === 'DirectVisit') {
-                campaign.UseGeolocation = false;
-            }
-
-            // Clear time/proxy settings as requested
-            campaign.TimeOfVisitMin = '';
-            campaign.TimeOfVisitMax = '';
-            campaign.TimeOfInternalMin = '';
-            campaign.TimeOfInternalMax = '';
-            campaign.TimeOfReferrelMin = '';
-            campaign.TimeOfReferrelMax = '';
-            campaign.MinDelayAfterVisit = '';
-            campaign.MaxDelayAfterVisit = '';
-            campaign.lstCustomProxies = [];
-            campaign.lstCustomGeolocations = [];
-
+            campaign.TargetUrl   = url;
+            campaign.TargetName  = url;
+            this.applyBulkOptions(campaign, bulkOpts);
             newCampaigns.push(campaign);
         });
 
         this.campaigns = [...newCampaigns, ...this.campaigns];
         this.filteredCampaigns = [...this.campaigns];
         this.saveToStorage();
-        this.renderSpreadsheet();
+        this.renderData();
 
         this.showToast(`Created ${newCampaigns.length} campaign(s)`, 'success');
         
@@ -1124,57 +1117,24 @@ const app = {
         this.saveHistory();
         const newCampaigns = [];
 
-        clusters.forEach((keywords, index) => {
+        const kwBulkOpts = { dailyLimit, totalVisits, campaignType, useGeo, useProxy, deviceType, startTime, endTime, keywords: [] };
+        clusters.forEach((keywords) => {
             const campaign = this.generateCampaign(campaignType);
             const firstName = keywords[0];
-            
             campaign.ProjectName = prefix + firstName;
-            campaign.TargetName = prefix + firstName;
-            campaign.Type = campaignType;
-            campaign.DailyLimit = dailyLimit;
-            campaign.numberOfVisits = totalVisits;
-            campaign.doneVisits = `0 of ${totalVisits}`;
-            campaign.doneDailyVisits = '0 of 1';
-            campaign.UseGeolocation = useGeo;
-            campaign.UseCustomProxy = useProxy;
-            campaign.DeviceType = deviceType;
-            campaign.strNextDevice = deviceType;
-            campaign.strStartTime = startTime;
-            campaign.strEndTime = endTime;
-            
-            // Add all keywords to campaign
-            campaign.Keywords = [...keywords];
-            campaign.lstKeywords = [...keywords];
-            
-            // For DirectVisit, use first keyword as TargetUrl if it looks like a URL
+            campaign.TargetName  = prefix + firstName;
+            kwBulkOpts.keywords  = keywords;
+            this.applyBulkOptions(campaign, kwBulkOpts);
             if (campaignType === 'DirectVisit' && keywords[0].startsWith('http')) {
                 campaign.TargetUrl = keywords[0];
             }
-
-            // For DirectVisit, disable geolocation by default
-            if (campaignType === 'DirectVisit') {
-                campaign.UseGeolocation = false;
-            }
-
-            // Clear time/proxy settings
-            campaign.TimeOfVisitMin = '';
-            campaign.TimeOfVisitMax = '';
-            campaign.TimeOfInternalMin = '';
-            campaign.TimeOfInternalMax = '';
-            campaign.TimeOfReferrelMin = '';
-            campaign.TimeOfReferrelMax = '';
-            campaign.MinDelayAfterVisit = '';
-            campaign.MaxDelayAfterVisit = '';
-            campaign.lstCustomProxies = [];
-            campaign.lstCustomGeolocations = [];
-
             newCampaigns.push(campaign);
         });
 
         this.campaigns = [...newCampaigns, ...this.campaigns];
         this.filteredCampaigns = [...this.campaigns];
         this.saveToStorage();
-        this.renderSpreadsheet();
+        this.renderData();
 
         this.showToast(`Created ${newCampaigns.length} campaign(s) from keywords`, 'success');
         
@@ -1204,7 +1164,7 @@ const app = {
         this.filteredCampaigns = [...this.campaigns];
         this.saveToStorage();
         this.saveHistory();
-        this.renderSpreadsheet();
+        this.renderData();
         this.showToast('New campaign created', 'success');
     },
 
@@ -1221,7 +1181,7 @@ const app = {
         this.filteredCampaigns = [...this.campaigns];
         this.selectedIds.clear();
         this.saveToStorage();
-        this.renderSpreadsheet();
+        this.renderData();
         this.showToast('Campaigns deleted', 'success');
     },
 
@@ -1257,7 +1217,7 @@ const app = {
                     this.campaigns = [...this.campaigns, ...json];
                     this.filteredCampaigns = [...this.campaigns];
                     this.saveToStorage();
-                    this.renderSpreadsheet();
+                    this.renderData();
                     this.showToast(`Imported ${json.length} campaign(s)`, 'success');
                 } else {
                     this.showToast('Invalid format: expected array', 'error');
@@ -1320,18 +1280,44 @@ const app = {
     },
 
     // ========== UTILITIES ==========
+    clearTimingFields(campaign) {
+        campaign.TimeOfVisitMin        = '';
+        campaign.TimeOfVisitMax        = '';
+        campaign.TimeOfInternalMin     = '';
+        campaign.TimeOfInternalMax     = '';
+        campaign.TimeOfReferrelMin     = '';
+        campaign.TimeOfReferrelMax     = '';
+        campaign.MinDelayAfterVisit    = '';
+        campaign.MaxDelayAfterVisit    = '';
+        campaign.lstCustomProxies      = [];
+        campaign.lstCustomGeolocations = [];
+    },
+
+    applyBulkOptions(campaign, opts) {
+        campaign.DailyLimit              = opts.dailyLimit;
+        campaign.numberOfVisits          = opts.totalVisits;
+        campaign.doneVisits              = '0 of ' + opts.totalVisits;
+        campaign.doneDailyVisits         = '0 of 1';
+        campaign.UseGeolocation          = opts.useGeo;
+        campaign.UseCustomProxy          = opts.useProxy;
+        campaign.DeviceType              = opts.deviceType;
+        campaign.strNextDevice           = opts.deviceType;
+        campaign.strStartTime            = opts.startTime;
+        campaign.strEndTime              = opts.endTime;
+        campaign.strMobileUseragentPecentage = opts.deviceType === 'Mobile' ? '50' : '0';
+        campaign.strMobileVisits  = opts.deviceType === 'Mobile'  ? '0 of ' + opts.totalVisits : '0 of 0';
+        campaign.strDesktopVisits = opts.deviceType === 'Desktop' ? '0 of ' + opts.totalVisits : '0 of 0';
+        if (opts.keywords && opts.keywords.length > 0) {
+            campaign.Keywords    = [...opts.keywords];
+            campaign.lstKeywords = [...opts.keywords];
+        }
+        this.clearTimingFields(campaign);
+    },
+
     generateCampaign(type) {
-        const campaignType = type || 'GSearch';
-        // Type-specific defaults per CTRBooster docs (CAMPAIGN_EXAMPLES.json)
-        const typeDefaults = {
-            GSearch:    { TimeinGooglePagesMin: '15', TimeinGooglePagesMax: '45', MaxPages: '3',  TargetSearchEngine: 'www.google.com', TimeOfReferrelMin: '0',  TimeOfReferrelMax: '0',   UseGeolocation: true  },
-            GMap:       { TimeinGooglePagesMin: '10', TimeinGooglePagesMax: '30', MaxPages: '0',  TargetSearchEngine: '',               TimeOfReferrelMin: '30', TimeOfReferrelMax: '90',  UseGeolocation: true  },
-            RefDVisit:  { TimeinGooglePagesMin: '0',  TimeinGooglePagesMax: '0',  MaxPages: '0',  TargetSearchEngine: '',               TimeOfReferrelMin: '30', TimeOfReferrelMax: '90',  UseGeolocation: true  },
-            GSearchRef: { TimeinGooglePagesMin: '20', TimeinGooglePagesMax: '60', MaxPages: '2',  TargetSearchEngine: 'www.google.com', TimeOfReferrelMin: '30', TimeOfReferrelMax: '90',  UseGeolocation: true  },
-            DirectVisit:{ TimeinGooglePagesMin: '0',  TimeinGooglePagesMax: '0',  MaxPages: '0',  TargetSearchEngine: '',               TimeOfReferrelMin: '0',  TimeOfReferrelMax: '0',   UseGeolocation: false }
-        };
-        const td = typeDefaults[campaignType] || typeDefaults.GSearch;
-        const now = new Date().toISOString();
+        const campaignType = type || CONFIG.DEFAULTS.CAMPAIGN_TYPE;
+        const td = CAMPAIGN_TYPE_DEFAULTS[campaignType] ?? CAMPAIGN_TYPE_DEFAULTS.GSearch;
+        const now = new Date();
         const visits = '1000';
         return {
             id: String(Math.floor(Math.random() * 9000000000) + 1000000000),
@@ -1340,7 +1326,7 @@ const app = {
             AuthorId: '',
             Checked: true,
             numberOfVisits: visits,
-            doneVisits: `0 of ${visits}`,
+            doneVisits: ,
             DailyLimit: '3',
             DailyLimitMin: '1',
             DailyLimitMax: '0',
@@ -1363,18 +1349,18 @@ const app = {
             TargetName: '',
             strStartTime: '10:00 AM',
             strEndTime: '9:00 PM',
-            dtTodayDate: now,
-            nextRun: now,
-            CreateTime: new Date().toLocaleString(),
+            dtTodayDate: now.toISOString(),
+            nextRun: now.toISOString(),
+            CreateTime: now.toLocaleString(),
             strMiles: '1',
             UseXMiles: true,
             UseGeolocation: td.UseGeolocation,
             lstCustomGeolocations: [],
             DeviceType: 'Desktop',
             strNextDevice: 'Desktop',
-            strMobileUseragentPecentage: '50',
+            strMobileUseragentPecentage: '0',
             strMobileVisits: '0 of 0',
-            strDesktopVisits: `0 of ${visits}`,
+            strDesktopVisits: ,
             Threads: '',
             UseCustomProxy: false,
             lstCustomProxies: [],
@@ -1384,7 +1370,7 @@ const app = {
             UsePhoneNumberClick: false,
             MatchExactUrl: true,
             VisitCompetitor: false,
-            GMapRetries: '3',
+            GMapRetries: 3,
             GMapRetriesFails: 0,
             Keywords: [],
             lstKeywords: [],
@@ -1393,7 +1379,7 @@ const app = {
             lstInternalIgnoreLinks: [],
             UseCustomLanguage: false,
             CustomLanguage: '',
-            Filename: `${Math.floor(Math.random() * 900000000) + 100000000}-${Math.floor(Math.random() * 900000000) + 100000000}`,
+            Filename: ,
         };
     },
 
