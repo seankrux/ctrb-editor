@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ctrb-editor",
+  "account_id": "7a7a08127b6d6744c838413b4473ecf1",
+  "compatibility_date": "2026-10-30",
+  "workers_dev": true,
+  "assets": {
+    "directory": ".cloudflare/assets"
+  }
+}
