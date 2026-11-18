@@ -63,3 +63,5 @@ test_export*.json
 
 # Archive (optional - uncomment to exclude)
 # archive/
+.wrangler/
+.cloudflare/
