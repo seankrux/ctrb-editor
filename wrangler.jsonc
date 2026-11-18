@@ -6,5 +6,11 @@
   "workers_dev": true,
   "assets": {
     "directory": ".cloudflare/assets"
-  }
+  },
+  "routes": [
+    {
+      "pattern": "www.ctrbooster.seanguillermo.com",
+      "custom_domain": true
+    }
+  ]
 }
