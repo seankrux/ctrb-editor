@@ -16,8 +16,9 @@ concurrency:
 
 jobs:
   lint:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CLOUDFLARE_RUNNER || 'ubuntu-latest' }}
     defaults:
       run:
         working-directory: ./nextjs-migration
@@ -39,8 +40,9 @@ jobs:
         run: npm run lint
 
   typecheck:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: Type Check
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CLOUDFLARE_RUNNER || 'ubuntu-latest' }}
     defaults:
       run:
         working-directory: ./nextjs-migration
@@ -62,8 +64,9 @@ jobs:
         run: npx tsc --noEmit
 
   build:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CLOUDFLARE_RUNNER || 'ubuntu-latest' }}
     defaults:
       run:
         working-directory: ./nextjs-migration
