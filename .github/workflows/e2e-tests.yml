@@ -38,7 +38,12 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: |
+          if [ "${{ runner.environment }}" = "self-hosted" ]; then
+            npx playwright install
+          else
+            npx playwright install --with-deps
+          fi
 
       - name: Build Next.js app
         run: npm run build
