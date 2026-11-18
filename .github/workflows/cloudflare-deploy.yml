@@ -18,6 +18,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Test private artifact integrity boundaries
+        run: python3 -m unittest scripts/test_artifact_store.py
       - name: Build and validate
         run: |
           node scripts/build-cloudflare.mjs
